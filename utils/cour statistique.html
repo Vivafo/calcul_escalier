@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide d'Étude Complet: Statistique et Probabilité</title>
+    <style>
+        /* Styles de base pour le corps de la page */
+        body {
+            font-family: 'Inter', Arial, sans-serif; /* Utilisation de la police Inter */
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8; /* Arrière-plan clair */
+            color: #2d3748; /* Couleur de texte sombre pour la lisibilité */
+        }
+        /* Conteneur principal avec styles de carte */
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* Coins plus arrondis */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Ombre plus douce */
+        }
+        /* Styles pour les titres principaux */
+        h1, h2, h3, h4 {
+            color: #2c5282; /* Bleu foncé pour les titres */
+            margin-bottom: 15px;
+        }
+        /* Style spécifique pour le titre H1 */
+        h1 {
+            text-align: center;
+            font-size: 2.8em; /* Taille de police plus grande */
+            margin-bottom: 30px;
+            color: #2a4365;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05); /* Légère ombre pour le titre */
+        }
+        /* Style spécifique pour le titre H2 avec une bordure */
+        h2 {
+            border-bottom: 2px solid #4299e1; /* Bordure bleue */
+            padding-bottom: 12px;
+            margin-top: 45px;
+            font-size: 2em;
+        }
+        /* Style spécifique pour le titre H3 */
+        h3 {
+            color: #3182ce; /* Bleu moyen pour les sous-titres */
+            margin-top: 35px;
+            font-size: 1.6em;
+        }
+        /* Style spécifique pour le titre H4 */
+        h4 {
+            color: #4a5568; /* Gris foncé pour les sous-sous-titres */
+            margin-top: 25px;
+            font-size: 1.3em;
+        }
+        /* Style pour les sections de contenu */
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #edf2f7; /* Arrière-plan léger pour les sections */
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        /* Style pour les phrases importantes ou mnémotechniques */
+        .important-phrase {
+            font-style: italic;
+            font-weight: bold;
+            color: #c53030; /* Rouge foncé */
+            margin: 15px 0;
+            padding: 12px;
+            border-left: 6px solid #e53e3e; /* Bordure rouge plus prononcée */
+            background-color: #fff5f5; /* Arrière-plan rose très clair */
+            border-radius: 6px;
+        }
+        /* Styles pour les listes */
+        ul {
+            list-style-type: disc;
+            margin-left: 25px;
+            padding: 5px 0;
+        }
+        ol {
+            list-style-type: decimal;
+            margin-left: 25px;
+            padding: 5px 0;
+        }
+        /* Style pour les blocs d'exemple */
+        .example, .tip {
+            background-color: #ebf8ff; /* Bleu très clair */
+            border-left: 5px solid #38b2ac; /* Bordure turquoise */
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #2c7a7b; /* Couleur de texte associée */
+        }
+        /* Style pour les blocs de formule */
+        .formula {
+            background-color: #f0fff4; /* Vert très clair */
+            border-left: 5px solid #48bb78; /* Bordure verte */
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', Courier, monospace; /* Police monospace pour les formules */
+            font-size: 1.15em;
+            border-radius: 8px;
+            color: #2f855a; /* Couleur de texte associée */
+            text-align: center; /* Centrer le texte de la formule */
+        }
+        /* Styles pour les tableaux */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            border-radius: 8px;
+            overflow: hidden; /* Assure que les coins arrondis sont respectés */
+        }
+        table, th, td {
+            border: 1px solid #cbd5e0; /* Bordure grise */
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #e2e8f0; /* Arrière-plan plus foncé pour les en-têtes */
+            color: #2d3748;
+            font-weight: bold;
+        }
+        /* Style pour les citations */
+        .citation {
+            font-size: 0.85em;
+            color: #718096; /* Gris moyen */
+            margin-top: 10px;
+            display: block;
+            text-align: right;
+            padding-right: 10px;
+        }
+        /* Styles responsifs pour une meilleure expérience mobile */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                border-radius: 8px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            h2 {
+                font-size: 1.6em;
+            }
+            h3 {
+                font-size: 1.3em;
+            }
+            .important-phrase, .example, .formula {
+                padding: 10px 15px;
+                margin: 15px 0;
+            }
+            ul, ol {
+                margin-left: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GUIDE D'ÉTUDE COMPLET: STATISTIQUE ET PROBABILITÉ</h1>
+        <p>Conçu spécialement pour l'apprentissage auditif - Lisez chaque section à voix haute pour maximiser votre compréhension</p>
+
+        <!-- Section Introduction Générale -->
+        <div class="section">
+            <h2>INTRODUCTION GÉNÉRALE</h2>
+            <p>Répétez cette phrase fondamentale:</p>
+            <div class="important-phrase">
+                "La statistique transforme des données brutes en informations utiles, tandis que la probabilité prédit la chance qu'un événement se produise dans l'incertitude."
+            </div>
+        </div>
+
+        <!-- Partie 1: Statistique Complète -->
+        <div class="section">
+            <h2>PARTIE 1: STATISTIQUE COMPLÈTE</h2>
+
+            <h3>CHAPITRE 1: DÉFINITIONS FONDAMENTALES</h3>
+            <h4>Concepts de Base à Maîtriser Absolument</h4>
+
+            <h4>LES STATISTIQUES versus LA STATISTIQUE</h4>
+            <p>Répétez 5 fois:</p>
+            <ul>
+                <li>Les statistiques sont un ensemble de données numériques</li>
+                <li>La statistique est une science qui analyse des données numériques afin de les ordonner, de les classer ou de les caractériser</li>
+            </ul>
+            <div class="example">
+                <p><strong>Exemple concret:</strong> Imaginez que vous collectez les âges de tous les élèves de votre classe: 18, 19, 17, 20, 18, 19, 17. Ces chiffres sont les statistiques. Maintenant, quand vous calculez que l'âge moyen est 18,3 ans, vous faites de la statistique.</p>
+            </div>
+            <div class="important-phrase">
+                "La statistique est neutre et objective. Elle permet de fournir des statistiques interprétables."
+            </div>
+
+            <h4>Pourquoi Utilise-t-on la Statistique ?</h4>
+            <p>Énumérez ces raisons à voix haute :</p>
+            <ol>
+                <li>Outil universel - Utilisé partout dans le monde</li>
+                <li>Faire passer un message Convaincre avec des données</li>
+                <li>Renforcement de l'argumentation - Donner de la crédibilité</li>
+            </ol>
+
+            <h4>Qui utilise la statistique ?</h4>
+            <ul>
+                <li>Politiciens (sondages d'opinion)</li>
+                <li>Enseignants (notes des élèves)</li>
+                <li>Compagnies aériennes (retards de vols)</li>
+                <li>Consommateurs (comparaison de prix)</li>
+                <li>Gens de sport (performance des athlètes)</li>
+            </ul>
+        </div>
+
+        <!-- CHAPITRE 2: LES ÉTUDES STATISTIQUES -->
+        <div class="section">
+            <h3>CHAPITRE 2: LES ÉTUDES STATISTIQUES</h3>
+            <h4>Types d'Études - Différence Cruciale</h4>
+
+            <h4>LE RECENSEMENT</h4>
+            <ul>
+                <li>Définition: Recherche d'informations sur TOUTE une population</li>
+                <li>Exemple simple: Compter tous les habitants du Canada</li>
+                <li>Avantage: Données complètes et exactes</li>
+                <li>Inconvénient: Très coûteux et long</li>
+            </ul>
+
+            <h4>LE SONDAGE</h4>
+            <ul>
+                <li>Définition: Recherche d'informations sur un échantillon représentatif d'une population</li>
+                <li>Exemple simple: Interroger 1000 personnes pour connaître l'opinion de 30 millions de Canadiens</li>
+                <li>Avantage: Rapide et moins coûteux</li>
+                <li>Inconvénient: Possibilité d'erreur</li>
+            </ul>
+            <p>Phrase mnémotechnique à répéter :</p>
+            <div class="important-phrase">
+                "René fait le Recensement de TOUTE la population, Sophie fait un Sondage d'un ÉCHANTILLON"
+            </div>
+
+            <h4>L'Échantillonnage - Pourquoi ?</h4>
+            <p>Répétez ces 5 raisons :</p>
+            <ol>
+                <li>La population est trop grande</li>
+                <li>La population est non accessible</li>
+                <li>Le recensement entraîne des coûts trop élevés</li>
+                <li>Le recensement est trop long à faire</li>
+                <li>Nature destructive de certains tests</li>
+            </ol>
+            <div class="example">
+                <p><strong>Exemple concret:</strong> Pour tester la qualité d'ampoules électriques, on ne peut pas toutes les tester car cela les détruirait !</p>
+            </div>
+        </div>
+
+        <!-- CHAPITRE 3: LE PROCESSUS D'ENQUÊTE (4 ÉTAPES) -->
+        <div class="section">
+            <h3>CHAPITRE 3: LE PROCESSUS D'ENQUÊTE (4 ÉTAPES)</h3>
+            <p>Mémorisez cet ordre avec l'acronyme CCOI:</p>
+            <ol>
+                <li><strong>CERNER LA SITUATION</strong>
+                    <ul>
+                        <li>But: Formuler des questions statistiques pertinentes</li>
+                        <li>Exemple: "Quelle est la couleur de voiture préférée des étudiants ?"</li>
+                        <li>Mauvaise question: "Les voitures sont-elles belles?" (trop subjective)</li>
+                    </ul>
+                </li>
+                <li><strong>COLLECTER LES DONNÉES</strong>
+                    <ul>
+                        <li>But: Rassembler les informations nécessaires</li>
+                        <li>Exemple: Interroger 200 étudiants sur leur couleur de voiture préférée</li>
+                    </ul>
+                </li>
+                <li><strong>ORGANISER LES DONNÉES</strong>
+                    <ul>
+                        <li>But: Créer tableaux et diagrammes</li>
+                        <li>Exemple: Faire un tableau: Rouge (45), Bleu (62), Noir (48), Blanc (45)</li>
+                    </ul>
+                </li>
+                <li><strong>INTERPRÉTER LES RÉSULTATS</strong>
+                    <ul>
+                        <li>But: Analyser et conclure</li>
+                        <li>Exemple: "Le bleu est la couleur préférée avec 31% des réponses"</li>
+                    </ul>
+                </li>
+            </ol>
+            <p>Répétez l'acronyme CCOI 10 fois de suite!</p>
+        </div>
+
+        <!-- CHAPITRE 4: TYPES DE DONNÉES -->
+        <div class="section">
+            <h3>CHAPITRE 4: TYPES DE DONNÉES</h3>
+            <h4>Classification Fondamentale</h4>
+
+            <h4>DONNÉES QUALITATIVES</h4>
+            <ul>
+                <li>Définition: Exprimées en mots</li>
+                <li>Exemples simples:
+                    <ul>
+                        <li>Couleurs: rouge, bleu, vert</li>
+                        <li>Genres: masculin, féminin</li>
+                        <li>Goûts: chocolat, vanille, fraise</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>DONNÉES QUANTITATIVES</h4>
+            <p>Définition: Exprimées en nombres</p>
+            <ul>
+                <li>Deux sous-types:</li>
+                <ol>
+                    <li><strong>DISCRÈTES</strong>
+                        <ul>
+                            <li>Définition: Nombres entiers seulement</li>
+                            <li>Exemples:
+                                <ul>
+                                    <li>Nombre d'enfants dans une famille: 0, 1, 2, 3...</li>
+                                    <li>Nombre de voitures: 1, 2, 3... (pas 2,5 voitures !)</li>
+                                    <li>Points à un examen: $15/20,$ $16/20,$ $17/20$</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><strong>CONTINUES</strong>
+                        <ul>
+                            <li>Définition: Peuvent prendre toute valeur</li>
+                            <li>Exemples:
+                                <ul>
+                                    <li>Taille: 1,72 m, 1,734 m, 1,7356 m...</li>
+                                    <li>Poids: 65,7 kg, 65,73 kg...</li>
+                                    <li>Temps: 12,45 secondes, 12,453 secondes...</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ol>
+            </ul>
+            <p>Truc mnémotechnique:</p>
+            <div class="important-phrase">
+                "Dis-crète = Dis les nombres entiers seulement"<br>
+                "Con-tinus = Continues partout, tous les nombres possibles"
+            </div>
+
+            <h4>Sources de Données</h4>
+            <h4>DONNÉES PRIMAIRES</h4>
+            <ul>
+                <li>Définition: Recueillies par la personne qui mène l'enquête</li>
+                <li>Exemple: Vous interrogez vous-même 100 personnes</li>
+            </ul>
+            <h4>DONNÉES SECONDAIRES</h4>
+            <ul>
+                <li>Définition: Recueillies par une autre personne</li>
+                <li>Exemple: Vous utilisez un sondage fait par Statistique Canada</li>
+            </ul>
+        </div>
+
+        <!-- CHAPITRE 5: MÉTHODES D'ÉCHANTILLONNAGE -->
+        <div class="section">
+            <h3>CHAPITRE 5: MÉTHODES D'ÉCHANTILLONNAGE</h3>
+            <h4>Échantillonnage Probabiliste</h4>
+
+            <h4>ALÉATOIRE SIMPLE</h4>
+            <ul>
+                <li>Principe: Tirage au hasard comme dans un chapeau</li>
+                <li>Exemple concret: Mettre tous les noms d'élèves dans un sac et piger 30 noms</li>
+                <li>Avantage: Chaque personne a la même chance d'être choisie</li>
+            </ul>
+
+            <h4>SYSTÉMATIQUE</h4>
+            <ul>
+                <li>Principe: Méthode automatique selon une règle</li>
+                <li>Exemple concret: Dans une liste de 1000 noms, prendre un nom sur 10 (le 3e, puis le 13e, puis le 23e, etc.)</li>
+                <li>Astuce: Commencer par un numéro au hasard parmi les 10 premiers</li>
+            </ul>
+
+            <h4>STRATIFIÉ</h4>
+            <ul>
+                <li>Principe: Respecter les proportions de chaque catégorie</li>
+                <li>Exemple concret:
+                    <ul>
+                        <li>École: 60% filles, 40% garçons</li>
+                        <li>Échantillon de 100: 60 filles, 40 garçons</li>
+                    </ul>
+                </li>
+                <li>But: Représenter fidèlement toute la population</li>
+            </ul>
+
+            <h4>PAR GRAPPES</h4>
+            <ul>
+                <li>Principe: Tirage par groupes entiers</li>
+                <li>Exemple concret: Choisir 5 classes entières au hasard plutôt que des élèves individuels</li>
+                <li>Avantage: Plus facile à organiser</li>
+            </ul>
+            <p>Phrase mnémotechnique:</p>
+            <div class="important-phrase">
+                "Alice (Aléatoire) Systématiquement Stratifie par Grappes"
+            </div>
+
+            <h4>Sources de Biais - Attention Danger!</h4>
+            <p>Répétez ces sources d'erreur :</p>
+            <ol>
+                <li>Échantillon non représentatif de la population</li>
+                <li>Mauvaise formulation de la question</li>
+                <li>Attitude de la personne qui fait le sondage</li>
+                <li>Représentation inadéquate des résultats obtenus</li>
+            </ol>
+            <div class="example">
+                <p><strong>Exemple historique célèbre:</strong> En 1936, un magazine interroge 2 millions d'électeurs et prédit la victoire de Landon. Gallup interroge seulement 3000 personnes et prédit correctement la victoire de Roosevelt. Pourquoi ? Le magazine avait un échantillon biaisé (seulement des riches avec téléphone)!</p>
+            </div>
+        </div>
+
+        <!-- CHAPITRE 6: ORGANISATION DES DONNÉES -->
+        <div class="section">
+            <h3>CHAPITRE 6: ORGANISATION DES DONNÉES</h3>
+            <h4>Tableaux et Fréquences</h4>
+
+            <h4>FRÉQUENCE</h4>
+            <ul>
+                <li>Formule à mémoriser:</li>
+            </ul>
+            <div class="formula">
+                Fréquence = (effectif d'une modalité / effectif total) x 100
+            </div>
+            <div class="example">
+                <p><strong>Exemple pratique:</strong></p>
+                <p>Forces armées canadiennes :</p>
+                <ul>
+                    <li>Armée de l'air: 155 000 sur 621 000 total</li>
+                    <li>Fréquence = (155 000 / 621 000) x 100 = 25%</li>
+                </ul>
+            </div>
+            <p>Répétez cette formule 5 fois en articulant bien !</p>
+
+            <h4>Types de Diagrammes - Règles d'Usage</h4>
+            <ul>
+                <li><strong>TABLEAU</strong>
+                    <ul>
+                        <li>Usage: Liste de faits ou résultats bruts</li>
+                        <li>Exemple: Liste des notes de tous les élèves</li>
+                    </ul>
+                </li>
+                <li><strong>PICTOGRAMME</strong>
+                    <ul>
+                        <li>Limitation importante: NON adapté aux données quantitatives continues</li>
+                        <li>Usage: Données qualitatives ou quantitatives discrètes</li>
+                        <li>Exemple: Nombre de voitures par couleur (symboles de voitures)</li>
+                    </ul>
+                </li>
+                <li><strong>DIAGRAMME À BANDES</strong>
+                    <ul>
+                        <li>Limitation importante: NON adapté aux données quantitatives continues</li>
+                        <li>Usage: Données qualitatives ou quantitatives discrètes</li>
+                        <li>Exemple: Sports préférés des élèves</li>
+                    </ul>
+                </li>
+                <li><strong>HISTOGRAMME</strong>
+                    <ul>
+                        <li>Usage spécifique: Données quantitatives continues regroupées en classes</li>
+                        <li>Différence avec diagramme à bandes: Barres collées (données continues)</li>
+                        <li>Exemple: Répartition des tailles des élèves (150-155 cm, 155-160 cm, etc.)</li>
+                    </ul>
+                </li>
+                <li><strong>DIAGRAMME CIRCULAIRE</strong>
+                    <ul>
+                        <li>Usage: Représenter le partage d'un tout connu</li>
+                        <li>Condition: Le total doit être de 100%</li>
+                        <li>Exemple: Budget familial (logement 40%, nourriture 25%, etc.)</li>
+                    </ul>
+                </li>
+                <li><strong>DIAGRAMME À LIGNE BRISÉE</strong>
+                    <ul>
+                        <li>Usage: Évolution dans le temps</li>
+                        <li>Exemple: Température pendant une semaine</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>Règle d'or à retenir :</p>
+            <div class="important-phrase">
+                "Le choix du diagramme dépend du TYPE de données et du BUT de la représentation"
+            </div>
+        </div>
+
+        <!-- CHAPITRE 7: MESURES DE TENDANCE CENTRALE -->
+        <div class="section">
+            <h3>CHAPITRE 7: MESURES DE TENDANCE CENTRALE</h3>
+            <h4>La Moyenne Arithmétique</h4>
+            <p>DÉFINITION PRÉCISE :</p>
+            <p>La moyenne arithmétique de plusieurs quantités est la somme de ces quantités divisée par le nombre de quantités additionnées.</p>
+            <p>FORMULE :</p>
+            <div class="formula">
+                Moyenne = Somme des valeurs / Nombre de valeurs
+            </div>
+            <div class="example">
+                <p><strong>Exemple détaillé :</strong></p>
+                <p>Prix de 6 jouets: 12, 15, 8, 20, 10, 13</p>
+                <ul>
+                    <li>Somme: 12+15+8+20+ 10+ 13 = 78$</li>
+                    <li>Nombre de jouets: 6</li>
+                    <li>Moyenne: $78 \div 6 = 13$</li>
+                </ul>
+                <p>Interprétation: Si tous les jouets coûtaient le même prix, ils coûteraient 13$ chacun.</p>
+            </div>
+            <p>CARACTÉRISTIQUE IMPORTANTE:</p>
+            <p>La moyenne est sensible aux données éloignées (valeurs extrêmes).</p>
+            <div class="example">
+                <p><strong>Exemple de sensibilité :</strong></p>
+                <p>Salaires: 30 000, 32000, 31 000, 29000, 300 000$</p>
+                <ul>
+                    <li>Moyenne $=84~400$$ (influencée par le salaire de 300 000$)</li>
+                </ul>
+                <p>Cette moyenne ne représente pas bien le groupe !</p>
+            </div>
+
+            <h4>La Médiane</h4>
+            <p>DÉFINITION:</p>
+            <p>Dans une distribution ordonnée, c'est le centre de la distribution.</p>
+            <p>PROCÉDURE ÉTAPE PAR ÉTAPE :</p>
+            <ol>
+                <li>ORDONNER les données (très important !)</li>
+                <li>COMPTER le nombre de données</li>
+                <li>APPLIQUER la règle :
+                    <ul>
+                        <li>Si nombre impair: prendre la donnée du milieu</li>
+                        <li>Si nombre pair: prendre la moyenne des deux données du milieu</li>
+                    </ul>
+                </li>
+            </ol>
+            <div class="example">
+                <p><strong>Exemple avec nombre impair:</strong></p>
+                <p>Ages: 15, 22, 18, 20, 16, 19, 17</p>
+                <ol>
+                    <li>Ordonner: 15, 16, 17, 18, 19, 20, 22</li>
+                    <li>7 données (impair)</li>
+                    <li>Médiane = 4e donnée $=18$ ans</li>
+                </ol>
+                <p><strong>Exemple avec nombre pair:</strong></p>
+                <p>Ages: 15, 22, 18, 20, 16, 19</p>
+                <ol>
+                    <li>Ordonner: 15, 16, 18, 19, 20, 22</li>
+                    <li>6 données (pair)</li>
+                    <li>Médiane = (18+19) / 2 = 18,5 ans</li>
+                </ol>
+            </div>
+            <p>AVANTAGE de la médiane:</p>
+            <p>Pas influencée par les valeurs extrêmes !</p>
+
+            <h4>Le Mode</h4>
+            <p>DÉFINITION:</p>
+            <p>La donnée ayant le plus grand effectif (qui apparaît le plus souvent).</p>
+            <div class="example">
+                <p><strong>Exemple simple:</strong></p>
+                <p>Données: 3, 3, 3, 1, 5, 8, 8, 3, 2</p>
+                <ul>
+                    <li>Le 3 apparaît 4 fois</li>
+                    <li>Le 8 apparaît 2 fois</li>
+                    <li>Les autres apparaissent 1 fois</li>
+                    <li>Mode $=3$</li>
+                </ul>
+            </div>
+            <p>CAS PARTICULIERS:</p>
+            <ul>
+                <li>Pas de mode: Toutes les données apparaissent le même nombre de fois</li>
+                <li>Plusieurs modes: Plusieurs données apparaissent le plus souvent avec la même fréquence</li>
+            </ul>
+            <div class="example">
+                <p><strong>Exemple sans mode:</strong></p>
+                <p>Données: 1, 2, 3, 4, 5 (chaque nombre apparaît 1 fois)</p>
+                <p><strong>Exemple avec 2 modes:</strong></p>
+                <p>Données: 1, 1, 2, 3, 3 (le 1 et le 3 apparaissent chacun 2 fois)</p>
+            </div>
+        </div>
+
+        <!-- Partie 2 : Probabilité Complète -->
+        <div class="section">
+            <h2>PARTIE 2 : PROBABILITÉ COMPLÈTE</h2>
+            <h3>CHAPITRE 8: CONCEPTS FONDAMENTAUX DE PROBABILITÉ</h3>
+            <h4>Définition Générale</h4>
+            <p>Répétez cette définition complète :</p>
+            <div class="important-phrase">
+                "La probabilité permet de décrire, dans une situation de variabilité, le niveau de certitude avec lequel on peut prédire que tel résultat ou tel événement aura lieu."
+            </div>
+            <p>Reformulation simple:</p>
+            <div class="important-phrase">
+                "La probabilité dit à quel point on peut être sûr qu'quelque chose va arriver quand on ne peut pas le prédire avec certitude."
+            </div>
+            <h4>Situations où on utilise la probabilité</h4>
+            <p>Répétez ces exemples:</p>
+            <ul>
+                <li>Météorologie: "Il y a 70% de chance de pluie demain"</li>
+                <li>Médecine: "Cette opération a 95% de chance de réussir"</li>
+                <li>Jeux: "J'ai 1 chance sur 6 d'obtenir un 4 avec ce dé"</li>
+                <li>Sport: "Cette équipe a 60% de chance de gagner"</li>
+            </ul>
+
+            <!-- Principe Fondamental: L'Indépendance des Résultats -->
+            <h4>Principe Fondamental: L'Indépendance des Résultats</h4>
+            <p>CONCEPT CRUCIAL À COMPRENDRE :</p>
+            <p>Même si un événement rare vient de se produire, cela ne change pas la probabilité des événements suivants.</p>
+            <div class="example">
+                <p><strong>Exemple concret:</strong></p>
+                <p>Vous lancez une pièce et obtenez 7 "pile" consécutifs. Quelle est la probabilité d'obtenir "pile" au 8e lancer?</p>
+                <ul>
+                    <li>Réponse: Toujours $1/2$ (50%)!</li>
+                    <li>Erreur commune: Penser que "face" est plus probable</li>
+                </ul>
+            </div>
+            <p>Répétez 3 fois :</p>
+            <div class="important-phrase">
+                "Les résultats passés n'influencent pas les résultats futurs dans les expériences indépendantes"
+            </div>
+        </div>
+
+        <!-- CHAPITRE 9: EXPÉRIENCE ALÉATOIRE -->
+        <div class="section">
+            <h3>CHAPITRE 9: EXPÉRIENCE ALÉATOIRE</h3>
+            <h4>Définition Complète</h4>
+            <p>Une expérience aléatoire est toute expérience qui satisfait aux TROIS conditions suivantes:</p>
+            <ol>
+                <li><strong>CONDITION 1:</strong> On peut décrire (avant l'expérience) l'ensemble de tous les résultats possibles.</li>
+                <li><strong>CONDITION 2:</strong> On ne peut pas prévoir avec certitude (avant l'expérience) quel résultat va se réaliser.</li>
+                <li><strong>CONDITION 3:</strong> Un nombre (probabilité du résultat) est associé à chacun de ses résultats.</li>
+            </ol>
+            <h4>Exemples d'Expériences Aléatoires</h4>
+            <p><strong>LANCER UN DÉ :</strong></p>
+            <ul>
+                <li>Condition 1: Résultats possibles $=\{1,2,3,4,5,6\}$</li>
+                <li>Condition 2: On ne sait pas quel nombre sortira</li>
+                <li>Condition 3: Chaque face a une probabilité de $1/6$</li>
+            </ul>
+            <p><strong>TIRER UNE CARTE :</strong></p>
+            <ul>
+                <li>Condition 1: 52 cartes possibles</li>
+                <li>Condition 2: On ne sait pas laquelle sortira</li>
+                <li>Condition 3: Chaque carte a une probabilité de $1/52$</li>
+            </ul>
+            <p><strong>CONTRE-EXEMPLE (pas aléatoire):</strong></p>
+            <p>"Calculer $2+2$"</p>
+            <ul>
+                <li>Résultat certain $=4$</li>
+                <li>Pas d'incertitude!</li>
+            </ul>
+
+            <h4>L'Univers des Possibles ($\Omega$)</h4>
+            <p>SYMBOLE: $\Omega$ (Oméga - dernière lettre de l'alphabet grec)</p>
+            <p>DÉFINITION: Ensemble de tous les résultats possibles d'une expérience aléatoire.</p>
+            <div class="example">
+                <p><strong>EXEMPLES CONCRETS:</strong></p>
+                <p>Lancer un dé:</p>
+                <p>$\Omega=\{1,2,3,4,5,6\}$</p>
+                <p>Lancer une pièce:</p>
+                <p>$\Omega=$ {Pile, Face}</p>
+                <p>Choisir une lettre de "CHAT":</p>
+                <p>$\Omega=\{C,H,A,T\}$</p>
+                <p>Lancer deux pièces :</p>
+                <p>$\Omega=\{(Pile,Pile)$, (Pile, Face), (Face, Pile), (Face, Face)}</p>
+            </div>
+            <p>RÔLE IMPORTANT:</p>
+            <p>Le nombre d'éléments de $\Omega$ détermine le "nombre de cas au total" dans le calcul de probabilité.</p>
+        </div>
+
+        <!-- CHAPITRE 10: TYPES DE PROBABILITÉS -->
+        <div class="section">
+            <h3>CHAPITRE 10: TYPES DE PROBABILITÉS</h3>
+            <h4>1. Probabilité Théorique</h4>
+            <p>DÉFINITION:</p>
+            <p>Probabilité qu'on peut calculer par un raisonnement mathématique.</p>
+            <p>FORMULE FONDAMENTALE :</p>
+            <div class="formula">
+                P(résultat) = Nombre de cas favorables / Nombre de cas au total
+            </div>
+            <div class="example">
+                <p><strong>Exemples détaillés :</strong></p>
+                <p>Dé équilibré :</p>
+                <ul>
+                    <li>Probabilité d'obtenir un $4=1/6$ (1 cas favorable sur 6 cas total)</li>
+                    <li>Probabilité d'obtenir un nombre pair $=3/6=1/2$ (nombres 2, 4, 6)</li>
+                    <li>Probabilité d'obtenir un nombre $<5=4/6=2/3$ (nombres 1, 2, 3, 4)</li>
+                </ul>
+                <p>Pièce équilibrée:</p>
+                <ul>
+                    <li>Probabilité d'obtenir pile $=1/2$</li>
+                    <li>Probabilité d'obtenir face $=1/2$</li>
+                </ul>
+            </div>
+
+            <h4>2. Probabilité Fréquentielle (Expérimentale)</h4>
+            <p>DÉFINITION:</p>
+            <p>Probabilité qu'on observe après de nombreuses expériences identiques.</p>
+            <p>PRINCIPE:</p>
+            <p>Après un grand nombre d'expériences, la fréquence relative d'un résultat se rapproche de la probabilité théorique.</p>
+            <div class="example">
+                <p><strong>Exemples historiques authentiques:</strong></p>
+                <p><strong>Comte de Buffon (1777):</strong></p>
+                <ul>
+                    <li>4 040 lancers de pièce</li>
+                    <li>2 048 "face" obtenus</li>
+                    <li>Fréquence: 2048/4040 = 50,69%</li>
+                </ul>
+                <p><strong>John Kerrich (Seconde Guerre mondiale):</strong></p>
+                <ul>
+                    <li>10 000 lancers de pièce (en prison !)</li>
+                    <li>5 067 "face" obtenus</li>
+                    <li>Fréquence: 5067/10000 = 50,67%</li>
+                </ul>
+                <p><strong>Karl Pearson:</strong></p>
+                <ul>
+                    <li>24 000 lancers de pièce</li>
+                    <li>12 012 "face" obtenus</li>
+                    <li>Fréquence: 12012/24000 = 50,05%</li>
+                </ul>
+                <p>OBSERVATION: Plus on répète l'expérience, plus on se rapproche de 50%!</p>
+            </div>
+
+            <h4>3. Probabilité Subjective</h4>
+            <p>DÉFINITION:</p>
+            <p>Opinion d'une personne (souvent un expert) qui s'appuie sur ses connaissances et l'observation d'expériences similaires.</p>
+            <div class="example">
+                <p><strong>Exemples concrets:</strong></p>
+                <ul>
+                    <li>Médecin: "Ce patient a 90% de chance de guérir"</li>
+                    <li>Entraîneur: "Mon équipe a 70% de chance de gagner"</li>
+                    <li>Météorologue: "Il y a 80% de chance de pluie"</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CHAPITRE 11: ÉCHELLE DE PROBABILITÉ -->
+        <div class="section">
+            <h3>CHAPITRE 11: ÉCHELLE DE PROBABILITÉ</h3>
+            <h4>Les Trois Catégories</h4>
+            <h4>ÉVÉNEMENT IMPOSSIBLE</h4>
+            <ul>
+                <li>Probabilité $=0$</li>
+                <li>Exemples:
+                    <ul>
+                        <li>Obtenir 7 en lançant un dé normal</li>
+                        <li>Tirer une carte verte d'un jeu normal</li>
+                        <li>Avoir 25 heures dans une journée</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>ÉVÉNEMENT PROBABLE</h4>
+            <ul>
+                <li>Probabilité entre 0 et 1 (exclus)</li>
+                <li>Exemples:
+                    <ul>
+                        <li>Obtenir pile: $P=1/2=0,5$</li>
+                        <li>Obtenir un nombre pair avec un dé: $P=3/6=0,5$</li>
+                        <li>Réussir un examen après avoir étudié: $P=0,85$</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>ÉVÉNEMENT CERTAIN</h4>
+            <ul>
+                <li>Probabilité $=1$</li>
+                <li>Exemples:
+                    <ul>
+                        <li>Obtenir un nombre $\le6$ avec un dé normal</li>
+                        <li>Tirer une carte rouge ou noire d'un jeu normal</li>
+                        <li>Avoir entre 0 et 24 heures dans une journée</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>Phrase à mémoriser:</p>
+            <div class="important-phrase">
+                "Impossible $=0,$ Probable = entre 0 et 1, Certain $=1^{\prime\prime}$
+            </div>
+        </div>
+
+        <!-- CHAPITRE 12: DIAGRAMME EN ARBRE -->
+        <div class="section">
+            <h3>CHAPITRE 12: DIAGRAMME EN ARBRE</h3>
+            <h4>Utilité du Diagramme en Arbre</h4>
+            <p>USAGE PRINCIPAL:</p>
+            <p>Représenter les expériences aléatoires à plusieurs étapes.</p>
+            <p>AVANTAGES:</p>
+            <ol>
+                <li>Visualiser tous les résultats possibles</li>
+                <li>Calculer facilement les probabilités</li>
+                <li>Éviter d'oublier des possibilités</li>
+            </ol>
+            <h4>Exemple Simple: Deux Lancers de Pièce</h4>
+            <p>Expérience: Lancer une pièce deux fois de suite.</p>
+            <pre style="background-color: #f8f8f8; padding: 15px; border-radius: 8px; overflow-x: auto;">
+Départ
+  |
+  +--- Pile (1er lancer) ---+--- Pile (2e lancer) --- (Pile, Pile)
+  |                       |
+  |                       +--- Face (2e lancer) --- (Pile, Face)
+  |
+  +--- Face (1er lancer) ---+--- Pile (2e lancer) --- (Face, Pile)
+                          |
+                          +--- Face (2e lancer) --- (Face, Face)
+            </pre>
+            <p>Univers des possibles:</p>
+            <p>$\Omega=\{(Pile,Pile),$ (Pile, Face), (Face, Pile), (Face, Face)}</p>
+            <p>Nombre total de résultats: 4</p>
+
+            <h4>Règle de Multiplication pour Dénombrer</h4>
+            <p>RÈGLE:</p>
+            <p>Pour trouver le nombre total de résultats, multiplier le nombre de possibilités à chaque étape.</p>
+            <div class="example">
+                <p><strong>Exemples:</strong></p>
+                <p>Deux lancers de pièce :</p>
+                <p>2 possibilités x 2 possibilités $=4$ résultats</p>
+                <p>Menu restaurant:</p>
+                <p>2 soupes x 3 plats x 2 boissons $=12$ menus différents</p>
+                <p>Choix de vêtements:</p>
+                <p>4 chandails x 3 pantalons x 2 chaussures $=24$ tenues différentes</p>
+            </div>
+
+            <h4>Calcul des Probabilités avec l'Arbre</h4>
+            <p>RÈGLE FONDAMENTALE:</p>
+            <p>Pour calculer la probabilité d'un résultat, multiplier les probabilités de toutes les branches qui y mènent.</p>
+            <div class="example">
+                <p><strong>Exemple: Tirage de Billes avec Remise</strong></p>
+                <p>Sac contenant: 3 billes noires, 2 billes blanches (5 billes total)</p>
+                <p>On tire une bille, on la remet, puis on tire une seconde bille.</p>
+                <pre style="background-color: #f8f8f8; padding: 15px; border-radius: 8px; overflow-x: auto;">
+Pige 1                Pige 2              Probabilités           Résultats
+----------------------------------------------------------------------------------
+                 +- Blanche (2/5) -- (2/5)x(2/5)=(4/25) -- (Blanche, Blanche)
+Blanche (2/5) ---|
+                 +- Noire (3/5)    -- (2/5)x(3/5)=(6/25) -- (Blanche, Noire)
+
+                 +- Blanche (2/5) -- (3/5)x(2/5)=(6/25) -- (Noire, Blanche)
+Noire (3/5)   ---|
+                 +- Noire (3/5)    -- (3/5)x(3/5)=(9/25) -- (Noire, Noire)
+                </pre>
+                <p>Vérification: 4/25 + 6/25 + 6/25 + 9/25 = 25/25 = 1</p>
+            </div>
+
+            <h4>Avec Remise vs Sans Remise</h4>
+            <h4>AVEC REMISE:</h4>
+            <ul>
+                <li>Les probabilités restent constantes à chaque étape</li>
+                <li>Exemple précédent: toujours $2/5$ pour blanche, $3/5$ pour noire</li>
+            </ul>
+            <h4>SANS REMISE :</h4>
+            <ul>
+                <li>Les probabilités changent après chaque tirage</li>
+                <li>Le nombre total diminue à chaque étape</li>
+            </ul>
+            <div class="example">
+                <p><strong>Exemple: Tirage Sans Remise</strong></p>
+                <p>Même sac: 3 noires, 2 blanches</p>
+                <pre style="background-color: #f8f8f8; padding: 15px; border-radius: 8px; overflow-x: auto;">
+Pige 1                 Pige 2                 Probabilités      Résultats
+----------------------------------------------------------------------------------
+                 +- Blanche (1/4) ---- (2/5)x(1/4)=(2/20) ---- (Blanche, Blanche)
+Blanche (2/5) ---| (après avoir tiré 1 blanche: 1B, 3N -> 4 total)
+                 +- Noire (3/4)      -- (2/5)x(3/4)=(6/20) ---- (Blanche, Noire)
+
+                 +- Blanche (2/4) ---- (3/5)x(2/4)=(6/20) ---- (Noire, Blanche)
+Noire (3/5)   ---| (après avoir tiré 1 noire: 2B, 2N -> 4 total)
+                 +- Noire (2/4)      -- (3/5)x(2/4)=(6/20) ---- (Noire, Noire)
+                </pre>
+                <p>Explication des changements:</p>
+                <ul>
+                    <li>Après avoir tiré une blanche: reste 1 blanche et 3 noires (4 total)</li>
+                    <li>Après avoir tiré une noire: reste 2 blanches et 2 noires (4 total)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CHAPITRE 13: ÉVÉNEMENTS -->
+        <div class="section">
+            <h3>CHAPITRE 13: ÉVÉNEMENTS</h3>
+            <h4>Définition d'un Événement</h4>
+            <p>ÉVÉNEMENT:</p>
+            <p>Un sous-ensemble de l'univers des possibles ($\Omega$).</p>
+            <p>Représentation:</p>
+            <p>On nomme un événement avec une lettre majuscule: A, B, C, etc.</p>
+            <div class="example">
+                <p><strong>Exemple concret:</strong></p>
+                <p>Expérience: Lancer un dé</p>
+                <p>$\Omega=\{1,2,3,4,5,6\}$</p>
+                <p>Événement A: "Obtenir un nombre pair"</p>
+                <p>$A=\{2,4,6\}$</p>
+                <p>Événement B: "Obtenir un nombre $>4^{\prime\prime}$</p>
+                <p>$B=\{5,6\}$</p>
+            </div>
+
+            <h4>Probabilité d'un Événement</h4>
+            <p>RÈGLE:</p>
+            <p>La probabilité d'un événement = somme des probabilités de tous ses éléments.</p>
+            <div class="example">
+                <p><strong>Calculs avec l'exemple du dé:</strong></p>
+                <p>$P(A)=$ P(obtenir un nombre pair)</p>
+                <p>$P(A)=P(2)+P(4)+P(6)=1/6+1/6+1/6=3/6=1/2$</p>
+                <p>$P(B)=$ P(obtenir un nombre > 4)</p>
+                <p>$P(B)=P(5)+P(6)=1/6+1/6=2/6=1/3$</p>
+            </div>
+
+            <h4>Événements Indépendants vs Dépendants</h4>
+            <h4>ÉVÉNEMENTS INDÉPENDANTS:</h4>
+            <p>Ne s'influencent pas l'un l'autre.</p>
+            <div class="example">
+                <p><strong>Exemples:</strong></p>
+                <ul>
+                    <li>Lancer deux dés différents</li>
+                    <li>Tirer une carte avec remise</li>
+                    <li>Résultat d'un examen et météo du jour</li>
+                </ul>
+            </div>
+            <h4>ÉVÉNEMENTS DÉPENDANTS:</h4>
+            <p>S'influencent mutuellement.</p>
+            <div class="example">
+                <p><strong>Exemples:</strong></p>
+                <ul>
+                    <li>Tirer deux cartes sans remise</li>
+                    <li>Choisir 2 personnes dans un groupe sans répétition</li>
+                    <li>Nombre d'heures d'étude et note à l'examen</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CHAPITRE 14: OPÉRATIONS SUR LES ÉVÉNEMENTS -->
+        <div class="section">
+            <h3>CHAPITRE 14: OPÉRATIONS SUR LES ÉVÉNEMENTS</h3>
+            <h4>Union d'Événements (A U B)</h4>
+            <p>DÉFINITION:</p>
+            <p>Ensemble des éléments qui appartiennent à A OU à B (ou aux deux).</p>
+            <div class="example">
+                <p><strong>Exemple avec dé:</strong></p>
+                <p>$A=\{2,4,6\}$ (nombres pairs)</p>
+                <p>$B=\{1,3,5\}$ (nombres impairs)</p>
+                <p>$A\cup B=\{1,2,3,4,5,6\}=\Omega$ (tout l'univers)</p>
+                <p><strong>Autre exemple:</strong></p>
+                <p>$C=\{1,2,3\}$ (nombres $\le3)$</p>
+                <p>$D=\{3,4,5\}$ (nombres entre 3 et 5)</p>
+                <p>$C\cup D=\{1,2,3,4,5\}$</p>
+            </div>
+
+            <h4>Intersection d'Événements $(A\cap B)$</h4>
+            <p>DÉFINITION:</p>
+            <p>Ensemble des éléments qui appartiennent à A ET à B simultanément.</p>
+            <div class="example">
+                <p><strong>Exemple avec dé:</strong></p>
+                <p>$E=\{2,3,4,5\}$ (nombres entre 2 et 5)</p>
+                <p>$F=\{4,5,6\}$ (nombres $\ge4)$</p>
+                <p>$E\cap F=\{4,5\}$ (éléments communs)</p>
+                <p><strong>Cas particulier :</strong></p>
+                <p>$A=\{2,4,6\}$ (pairs)</p>
+                <p>$B=\{1,3,5\}$ (impairs)</p>
+                <p>$A\cap B=\emptyset$ (ensemble vide aucun élément commun)</p>
+            </div>
+
+            <h4>Événement Complémentaire (A')</h4>
+            <p>DÉFINITION:</p>
+            <p>Ensemble de tous les éléments de $\Omega$ qui ne sont PAS dans A.</p>
+            <div class="example">
+                <p><strong>Exemples:</strong></p>
+                <p>Si $A=\{2,4,6\}$ (nombres pairs)</p>
+                <p>Alors $A^{\prime}=\{1,3,5\}$ (nombres impairs)</p>
+                <p>Si $B=\{1,2,3\}$ (nombres $\le3)$</p>
+                <p>Alors $B^{\prime}=\{4,5,6\}$ (nombres > 3)</p>
+            </div>
+            <p>PROPRIÉTÉ IMPORTANTE:</p>
+            <p>$P(A)+P(A^{\prime})=1$</p>
+            <p>Application pratique :</p>
+            <p>Plutôt que calculer $P(A)$ directement, on peut calculer $P(A^{\prime})$ et faire:</p>
+            <div class="formula">
+                $P(A)=1-P(A^{\prime})$
+            </div>
+        </div>
+
+        <!-- CHAPITRE 15: TABLEAU À DOUBLE ENTRÉE -->
+        <div class="section">
+            <h3>CHAPITRE 15: TABLEAU À DOUBLE ENTRÉE</h3>
+            <h4>Utilité et Construction</h4>
+            <p>USAGE:</p>
+            <p>Organiser des données concernant deux caractères simultanément.</p>
+            <p><strong>Exemple concret: Groupe de 24 élèves</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Garçons</th>
+                        <th>Filles</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Droitiers</td>
+                        <td>12</td>
+                        <td>8</td>
+                        <td>20</td>
+                    </tr>
+                    <tr>
+                        <td>Gauchers</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>Total</td>
+                        <td>14</td>
+                        <td>10</td>
+                        <td>24</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Informations qu'on peut extraire</h4>
+            <p>Questions et réponses avec ce tableau :</p>
+            <ol>
+                <li>Probabilité de choisir un garçon droitier :<br>$P(\text{garçon droitier}) = 12/24 = 1/2$</li>
+                <li>Probabilité de choisir une fille:<br>$P(\text{fille}) = 10/24 = 5/12$</li>
+                <li>Probabilité de choisir un gaucher :<br>$P(\text{gaucher}) = 4/24 = 1/6$</li>
+            </ol>
+
+            <h4>Probabilités Conditionnelles</h4>
+            <p>DÉFINITION:</p>
+            <p>Probabilité qu'un événement se produise sachant qu'un autre événement s'est déjà produit.</p>
+            <p>Notation: $P(A|B)$ se lit "probabilité de A sachant $B^{\prime\prime}$</p>
+            <div class="example">
+                <p><strong>Exemples avec notre tableau :</strong></p>
+                <p>Question: Quelle est la probabilité d'avoir choisi une fille, sachant qu'on a choisi une personne gauchère ?</p>
+                <p>Raisonnement:</p>
+                <ul>
+                    <li>On sait que la personne est gauchère</li>
+                    <li>Il y a 4 gauchers au total</li>
+                    <li>Parmi ces 4 gauchers, 2 sont des filles</li>
+                    <li>$P(\text{fille | gaucher}) = 2/4 = 1/2$</li>
+                </ul>
+                <p><strong>Autre exemple:</strong></p>
+                <p>$P(\text{gaucher | fille}) = ?$</p>
+                <ul>
+                    <li>On sait que c'est une fille</li>
+                    <li>Il y a 10 filles au total</li>
+                    <li>Parmi ces 10 filles, 2 sont gauchères</li>
+                    <li>$P(\text{gaucher | fille}) = 2/10 = 1/5$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- STRATÉGIES D'EXAMEN ET POINTS CRITIQUES -->
+        <div class="section">
+            <h2>STRATÉGIES D'EXAMEN ET POINTS CRITIQUES</h2>
+            <h3>Erreurs Fréquentes à Éviter</h3>
+            <h4>En Statistique</h4>
+            <ol>
+                <li>Confondre recensement et sondage
+                    <ul>
+                        <li>Truc: René = Recensement = TOUT</li>
+                        <li>Truc: Sophie = Sondage = ÉCHANTILLON</li>
+                    </ul>
+                </li>
+                <li>Mal choisir le type de diagramme
+                    <ul>
+                        <li>Retenir: Données continues -> Histograms seulement</li>
+                        <li>Retenir: Évolution dans le temps -> Ligne brisée</li>
+                    </ul>
+                </li>
+                <li>Calculer la médiane sans ordonner
+                    <ul>
+                        <li>TOUJOURS ordonner d'abord!</li>
+                    </ul>
+                </li>
+                <li>Confondre moyenne et médiane
+                    <ul>
+                        <li>Moyenne: Sensible aux valeurs extrêmes</li>
+                        <li>Médiane: Résistante aux valeurs extrêmes</li>
+                    </ul>
+                </li>
+            </ol>
+            <h4>En Probabilité</h4>
+            <ol>
+                <li>Oublier de vérifier les conditions d'expérience aléatoire
+                    <ul>
+                        <li>3 conditions obligatoires!</li>
+                    </ul>
+                </li>
+                <li>Mal interpréter "avec remise" vs "sans remise"
+                    <ul>
+                        <li>Avec remise: Probabilités constantes</li>
+                        <li>Sans remise: Probabilités qui changent</li>
+                    </ul>
+                </li>
+                <li>Confondre union et intersection
+                    <ul>
+                        <li>Union (U): OU (addition)</li>
+                        <li>Intersection ($\cap$): ET (multiplication)</li>
+                    </ul>
+                </li>
+                <li>Oublier l'indépendance des résultats
+                    <ul>
+                        <li>Les résultats passés n'influencent pas les résultats futurs !</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Formules à Mémoriser Absolument -->
+        <div class="section">
+            <h3>Formules à Mémoriser Absolument</h3>
+            <h4>Statistique</h4>
+            <ul>
+                <li>Fréquence: (effectif modalité / effectif total) x 100</li>
+                <li>Moyenne: Somme des valeurs / Nombre de valeurs</li>
+            </ul>
+            <h4>Probabilité</h4>
+            <ul>
+                <li>Probabilité théorique: Cas favorables / Cas total</li>
+                <li>Probabilité totale: Somme de toutes les probabilités $=1$</li>
+                <li>Événement complémentaire: $P(A)+P(A^{\prime})=1$</li>
+            </ul>
+        </div>
+
+        <!-- Méthode de Résolution de Problèmes -->
+        <div class="section">
+            <h3>Méthode de Résolution de Problèmes</h3>
+            <h4>Pour un problème de statistique :</h4>
+            <ol>
+                <li>Identifier le type de données (qualitatives/quantitatives, discrètes/continues)</li>
+                <li>Choisir la représentation appropriée</li>
+                <li>Calculer les mesures demandées</li>
+                <li>Interpréter les résultats</li>
+            </ol>
+            <h4>Pour un problème de probabilité :</h4>
+            <ol>
+                <li>Vérifier s'il s'agit d'une expérience aléatoire</li>
+                <li>Déterminer l'univers des possibles ($\Omega$)</li>
+                <li>Identifier les événements</li>
+                <li>Appliquer la formule appropriée</li>
+                <li>Vérifier la cohérence du résultat</li>
+            </ol>
+        </div>
+
+        <!-- RÉVISION FINALE POUR L'EXAMEN -->
+        <div class="section">
+            <h2>RÉVISION FINALE POUR L'EXAMEN</h2>
+            <h3>Concepts Absolument Incontournables</h3>
+            <p>Répétez ces définitions 5 fois chacune :</p>
+            <ol>
+                <li>La statistique analyse des données pour les ordonner et les caractériser</li>
+                <li>Expérience aléatoire satisfait aux 3 conditions</li>
+                <li>Probabilité théorique = cas favorables / cas total</li>
+                <li>Indépendance des résultats: le passé n'influence pas l'avenir</li>
+                <li>Moyenne sensible aux valeurs extrêmes, médiane résistante</li>
+            </ol>
+
+            <h3>Questions Types d'Examen</h3>
+            <h4>Type 1: Identification</h4>
+            <ul>
+                <li>"S'agit-il d'un recensement ou d'un sondage ?"</li>
+                <li>"Ces données sont-elles qualitatives ou quantitatives?"</li>
+                <li>"Quel type de diagramme convient le mieux ?"</li>
+            </ul>
+            <h4>Type 2: Calculs</h4>
+            <ul>
+                <li>"Calculez la moyenne, médiane et mode"</li>
+                <li>"Quelle est la probabilité de...?"</li>
+                <li>"Complétez ce diagramme en arbre"</li>
+            </ul>
+            <h4>Type 3: Analyse</h4>
+            <ul>
+                <li>"Interprétez ces résultats"</li>
+                <li>"Expliquez pourquoi cette méthode d'échantillonnage est biaisée"</li>
+                <li>"Comparez ces deux situations"</li>
+            </ul>
+
+            <h3>Derniers Conseils Auditifs</h3>
+            <ol>
+                <li>Lisez TOUT le guide à voix haute au moins 2 fois</li>
+                <li>Récitez les formules en marchant</li>
+                <li>Expliquez les concepts à quelqu'un d'autre (ou à voix haute seul)</li>
+                <li>Créez vos propres exemples et dites-les à voix haute</li>
+                <li>Répétez les phrases mnémotechniques jusqu'à les connaître par cœur</li>
+            </ol>
+            <div class="tip">
+                <p><strong>Message final pour l'apprenant auditif :</strong></p>
+                <p>Votre réussite dépend de votre capacité à entendre et répéter ces concepts. Chaque fois que vous lisez ce guide à voix haute, vous renforcez votre compréhension. Les mathématiques peuvent sembler difficiles, mais avec la répétition auditive, vous pouvez maîtriser tous ces concepts. Courage et bonne chance pour votre examen!</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
