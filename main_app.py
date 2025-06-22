@@ -746,7 +746,7 @@ class ModernStairCalculator(tk.Tk):
 
         self.hauteur_reelle_cm_res_var.set(df_mm(res.get("hauteur_reelle_contremarche")))
         # REF-009: Ajout explicite du guillemet pour l'affichage du giron.
-        self.giron_souhaite_var.set(f"{df(res.get('giron_utilise'))}\"") 
+        self.giron_souhaite_var.set(df(res.get('giron_utilise'))) 
         self.longueur_totale_res_var.set(df_mm(res.get("longueur_calculee_escalier")))
         self.angle_res_var.set(f"{res.get('angle_escalier', 0):.2f}°")
         self.limon_res_var.set(df_mm(res.get("longueur_limon_approximative")))
@@ -758,6 +758,8 @@ class ModernStairCalculator(tk.Tk):
 
     def update_warnings_display(self):
         """Met à jour les messages d'avertissement et le statut global."""
+        if not self.latest_results:
+            return
         res = self.latest_results
         warnings_list = []
         is_conform = True
