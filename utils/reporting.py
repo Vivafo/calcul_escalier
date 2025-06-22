@@ -51,5 +51,88 @@ def generer_texte_trace(resultats_calcul, app_preferences):
         return f"Erreur : Donnée manquante ou invalide pour générer le rapport. ({e})"
 
 def generer_tableau_marches(resultats_calcul, app_preferences):
-    # Cette fonction peut être développée plus tard
-    return "Le tableau des marches n'est pas encore implémenté."
+    # Extraction des valeurs calculées du programme
+    hauteur_cm = resultats_calcul.get("hauteur_reelle_contremarche", 0)
+    giron = resultats_calcul.get("giron_utilise", 0) 
+    nombre_contremarches = resultats_calcul.get("nombre_contremarches", 0)
+    nombre_girons = resultats_calcul.get("nombre_girons", 0)
+    
+    if hauteur_cm <= 0 or giron <= 0 or nombre_contremarches <= 0:
+        return "Données insuffisantes pour générer le tableau d'hypoténuse cumulée."
+    
+    # Calcul de l'hypoténuse unitaire avec les vraies valeurs
+    import math
+    hypotenuse_unitaire = math.sqrt(hauteur_cm**2 + giron**2)
+    
+    # Fonctions de formatage
+    def df(val):
+        return decimal_to_fraction_str(val, app_preferences) if val is not None else "N/A"
+    
+    def df_mm(val):
+        return round(val * 25.4) if val is not None else "N/A"
+    
+    # Construction du tableau
+    tableau_lines = [
+        "=== TABLEAU 1: HYPOTÉNUSE CUMULÉE ===",
+        "",
+        "Chaque valeur correspond à la somme cumulative de l'hypoténuse calculée pour chaque marche.",
+        "La première ligne (Marche pied) correspond à la moitié de l'hypoténuse unitaire.",
+        "",
+        "| **Élément** | **Hypoténuse cumulée (pouces)** | **Hypoténuse cumulée (mm)** |",
+        "|-------------|----------------------------------|------------------------------|"
+    ]
+    
+    # Marche pied = moitié de l'hypoténuse unitaire
+    marche_pied_cum = hypotenuse_unitaire / 2
+    tableau_lines.append(f"| Marche pied | {df(marche_pied_cum)} | {df_mm(marche_pied_cum)} |")
+    
+    # Marches intermédiaires
+    for i in range(2, nombre_girons + 1):
+        element_nom = f"Marche {i}"
+        hypotenuse_cumulee = marche_pied_cum + (i-1) * hypotenuse_unitaire
+        tableau_lines.append(f"| {element_nom} | {df(hypotenuse_cumulee)} | {df_mm(hypotenuse_cumulee)} |")
+    
+    # Marche tête
+    hypotenuse_cumulee_tete = marche_pied_cum + nombre_girons * hypotenuse_unitaire
+    tableau_lines.append(f"| Marche tête | {df(hypotenuse_cumulee_tete)} | {df_mm(hypotenuse_cumulee_tete)} |")
+    
+    return "\n".join(tableau_lines)
+
+def generer_tableau_parametres(resultats_calcul, app_preferences):
+    # Extraction des vraies valeurs calculées
+    hauteur_totale = resultats_calcul.get("hauteur_totale_escalier", 0)
+    giron = resultats_calcul.get("giron_utilise", 0)
+    hauteur_cm = resultats_calcul.get("hauteur_reelle_contremarche", 0)
+    nombre_contremarches = resultats_calcul.get("nombre_contremarches", 0)
+    
+    if hauteur_totale <= 0 or giron <= 0 or hauteur_cm <= 0:
+        return "Données insuffisantes pour générer le tableau des paramètres de référence."
+    
+    # Calcul de l'hypoténuse unitaire
+    import math
+    hypotenuse_unitaire = math.sqrt(hauteur_cm**2 + giron**2)
+    
+    # Fonctions de formatage
+    def df(val):
+        return decimal_to_fraction_str(val, app_preferences) if val is not None else "N/A"
+    
+    def df_mm(val):
+        return round(val * 25.4) if val is not None else "N/A"
+    
+    # Construction du tableau
+    tableau_lines = [
+        "=== TABLEAU 2: PARAMÈTRES DE RÉFÉRENCE ===",
+        "",
+        "Ce tableau récapitule l'ensemble des valeurs essentielles utilisées dans le calcul de l'escalier.",
+        "",
+        "| **Paramètre** | **Valeur (pouces)** | **Valeur (mm)** |",
+        "|---------------|---------------------|------------------|",
+        f"| Hauteur totale | {df(hauteur_totale)} | {df_mm(hauteur_totale)} |",
+        f"| Giron | {df(giron)} | {df_mm(giron)} |",
+        f"| Hauteur par contremarche | {df(hauteur_cm)} | {df_mm(hauteur_cm)} |",
+        f"| Hypoténuse unitaire | {df(hypotenuse_unitaire)} | {df_mm(hypotenuse_unitaire)} |",
+        f"| Nombre de contremarches | {nombre_contremarches} | — |"
+    ]
+    
+    return "\n".join(tableau_lines)
+    

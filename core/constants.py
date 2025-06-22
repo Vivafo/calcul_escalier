@@ -10,7 +10,7 @@ POUCE_EN_MM = 25.4
 
 # Constantes pour le calcul des escaliers (selon le Code de construction du Québec, version récente et guide APCHQ)
 
-# Hauteur des contremarches (CM)
+# Hauteur des contremarches (CM)  avec un test dc frase inutile
 HAUTEUR_CM_MIN_REGLEMENTAIRE = 5.0   # pouces (127 mm) - Minimum selon le code
 HAUTEUR_CM_MAX_REGLEMENTAIRE = 8.25  # pouces (209 mm) - Maximum selon le code (souvent 8 1/4)
 HAUTEUR_CM_CONFORT_CIBLE = 7.5       # pouces (190.5 mm) - Cible pour le confort
