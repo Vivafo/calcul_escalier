@@ -30,6 +30,7 @@ HAUTEUR_LIBRE_MIN_REGLEMENTAIRE = 78.74 # pouces (2000 mm ou 6'6") - Minimum sel
 # Angles de pente
 ANGLE_CONFORT_STANDARD_MAX = 35.0  # degrés - Au-delà, l'escalier est considéré "raide"
 ANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX = 42.0 # degrés - Angle max acceptable, au-delà, potentiellement non conforme/dangereux
+ANGLE_STANDARD_MAX = 35.0  # degrés - Valeur standard maximale pour l'angle d'un escalier confortableANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX = 42.0 # degrés - Angle max acceptable, au-delà, potentiellement non conforme/dangereux
 # Note: ANGLE_STANDARD_MAX a été mentionné dans le code main_app.py mais n'était pas défini ici.
 # Je l'ai retiré du main_app.py pour éviter une erreur, mais si vous en avez besoin, définissez-le ici.
 # Pour l'instant, je vais utiliser ANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX comme limite supérieure si ANGLE_STANDARD_MAX n'existe pas.

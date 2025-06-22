@@ -249,22 +249,22 @@ class ModernStairCalculator(tk.Tk):
     # REF-002 (Corrigé par REF-005): Modification de la fonction pour mettre à jour le label du menu débogage
     def update_debug_menu_label(self): 
         try:
-            index = -1 # Initialiser à -1 pour indiquer non trouvé
-            # On parcourt les éléments du tools_menu pour trouver l'index de "Débogage"
+            index = -1
             for i in range(self.tools_menu.index(tk.END) + 1):
-                # entrycget pour un menu attend bien "label" pour le texte affiché
-                if self.tools_menu.entrycget(i, "label") == "Débogage": 
+                try:
+                    label = self.tools_menu.entrycget(i, "label")
+                except Exception:
+                    continue
+                if label and "Débogage" in label:
                     index = i
                     break
-            
-            if index != -1: # S'assurer que l'élément a été trouvé
+
+            if index != -1:
                 if constants.DEBUG_MODE_ACTIVE:
                     new_label = "Débogage: Actif (Vert)"
                 else:
                     new_label = "Débogage: Inactif (Rouge)"
-                
-                self.tools_menu.entryconfig(index, label=new_label) 
-
+                self.tools_menu.entryconfig(index, label=new_label)
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE:
                 print(f"DEBUG: Erreur lors de la mise à jour du label de débogage: {e}")
@@ -750,6 +750,8 @@ class ModernStairCalculator(tk.Tk):
         self.longueur_totale_res_var.set(df_mm(res.get("longueur_calculee_escalier")))
         self.angle_res_var.set(f"{res.get('angle_escalier', 0):.2f}°")
         self.limon_res_var.set(df_mm(res.get("longueur_limon_approximative")))
+
+        # REF-009: Ajout de l'échappée et de la longueur minimale de l'escal
         self.echappee_res_var.set(df_mm(res.get("min_echappee_calculee")))
         
         nb_girons = res.get("nombre_girons", 0)
