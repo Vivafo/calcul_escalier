@@ -40,7 +40,7 @@ class ModernStairCalculator(tk.Tk):
         self.themes = {
             "light": {
                 "bg": "#F0F0F0", "fg": "#000000",
-                "frame_bg": "#FFFFFF", "entry_bg": "#FFFFFF", "entry_fg": "#000000",
+                "frame_bg": "#E0E0E0", "entry_bg": "#E0E0E0", "entry_fg": "#000000",
                 "button_bg": "#E1E1E1", "button_fg": "#000000",
                 "accent": "#0078D7", "accent_fg": "#FFFFFF",
                 "success": "#107C10", "warning": "#D83B01", "error": "#D13438",
