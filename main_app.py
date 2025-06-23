@@ -40,7 +40,7 @@ class ModernStairCalculator(tk.Tk):
         self.themes = {
             "light": {
                 "bg": "#F0F0F0", "fg": "#000000",
-                "frame_bg": "#E0E0E0", "entry_bg": "#E0E0E0", "entry_fg": "#000000",
+                "frame_bg": "#FFFFFF", "entry_bg": "#FFFFFF", "entry_fg": "#000000",
                 "button_bg": "#E1E1E1", "button_fg": "#000000",
                 "accent": "#0078D7", "accent_fg": "#FFFFFF",
                 "success": "#107C10", "warning": "#D83B01", "error": "#D13438",
@@ -323,70 +323,76 @@ class ModernStairCalculator(tk.Tk):
         ]
 
         for i, (text, shortcut, var) in enumerate(entries_with_shortcuts):
-            # REF-007: Le texte du label est le texte original, le raccourci sera ajouté par _update_input_labels_for_debug
-            label = ttk.Label(input_frame, text=text) 
+            label = ttk.Label(input_frame, text=text)
             label.grid(row=i, column=0, sticky="w", padx=5, pady=8)
-            
-            # REF-007: Stocke la référence du label et son texte original pour mise à jour future
-            self.input_labels_map[shortcut] = (label, text) 
-
+            self.input_labels_map[shortcut] = (label, text)
             entry_frame = ttk.Frame(input_frame)
             entry_frame.grid(row=i, column=1, sticky="ew", padx=5, pady=8)
-            
             entry = ttk.Entry(entry_frame, textvariable=var, width=15, font=('Segoe UI', 10))
             entry.pack(side="left", fill="x", expand=True)
-            
             if shortcut == "HT":
                 ttk.Button(entry_frame, text="Laser", command=self.open_laser_dialog, width=6).pack(side="left", padx=(5,0))
 
     def _create_interactive_frame(self, parent):
         """Crée le cadre pour l'ajustement interactif avec organisation personnalisée."""
+        colors = self.themes[self.current_theme]
         interactive_frame = ttk.LabelFrame(parent, text="2. Ajustement Interactif")
         interactive_frame.pack(fill="x", pady=10)
+        # Appliquer la couleur de fond personnalisée (plus foncée)
+        interactive_frame.configure(style="Interactive.TLabelframe")
         for i in range(2):
             interactive_frame.columnconfigure(i, weight=1)
         for i in range(2):
             interactive_frame.rowconfigure(i, weight=1)
 
+        # Définir un style spécifique pour ce cadre si pas déjà fait
+        self.style.configure("Interactive.TLabelframe", background=colors["frame_bg"]) 
+        self.style.configure("Interactive.TLabelframe.Label", background=colors["frame_bg"], foreground=colors["fg"]) 
+
+        # Sous-cadres avec fond foncé
+        def make_dark_frame(master):
+            return ttk.Frame(master, style="Interactive.TFrame")
+        self.style.configure("Interactive.TFrame", background=colors["frame_bg"]) 
+
         # Gauche Haut : Nb Marches
-        marches_frame = ttk.Frame(interactive_frame)
+        marches_frame = make_dark_frame(interactive_frame)
         marches_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         marches_frame.columnconfigure(1, weight=1)
-        ttk.Label(marches_frame, text="Nb Marches (Manuel):", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, sticky="w")
-        marches_control_frame = ttk.Frame(marches_frame)
+        ttk.Label(marches_frame, text="Nb Marches (Manuel):", font=('Segoe UI', 10, 'bold'), background=colors["frame_bg"], foreground=colors["fg"]).grid(row=0, column=0, sticky="w")
+        marches_control_frame = make_dark_frame(marches_frame)
         marches_control_frame.grid(row=0, column=1, sticky="e")
         ttk.Button(marches_control_frame, text="-", command=self.decrement_marches, width=3).grid(row=0, column=0)
         ttk.Entry(marches_control_frame, textvariable=self.nombre_marches_manuel_var, width=5, justify='center').grid(row=0, column=1, padx=5)
         ttk.Button(marches_control_frame, text="+", command=self.increment_marches, width=3).grid(row=0, column=2)
 
         # Gauche Bas : Giron
-        giron_frame = ttk.Frame(interactive_frame)
+        giron_frame = make_dark_frame(interactive_frame)
         giron_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         giron_frame.columnconfigure(1, weight=1)
-        ttk.Label(giron_frame, text="Giron souhaité :", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, sticky="w")
-        giron_control_frame = ttk.Frame(giron_frame)
+        ttk.Label(giron_frame, text="Giron souhaité :", font=('Segoe UI', 10, 'bold'), background=colors["frame_bg"], foreground=colors["fg"]).grid(row=0, column=0, sticky="w")
+        giron_control_frame = make_dark_frame(giron_frame)
         giron_control_frame.grid(row=0, column=1, sticky="e")
         ttk.Button(giron_control_frame, text="-", command=self.decrement_giron, width=3).grid(row=0, column=0)
         ttk.Entry(giron_control_frame, textvariable=self.giron_souhaite_var, width=10, justify='center').grid(row=0, column=1, padx=5)
         ttk.Button(giron_control_frame, text="+", command=self.increment_giron, width=3).grid(row=0, column=2)
 
         # Droite Haut : Nb Contremarches
-        cm_frame = ttk.Frame(interactive_frame)
+        cm_frame = make_dark_frame(interactive_frame)
         cm_frame.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         cm_frame.columnconfigure(1, weight=1)
-        ttk.Label(cm_frame, text="Nb Contremarches (CM):", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, sticky="w")
-        cm_control_frame = ttk.Frame(cm_frame)
+        ttk.Label(cm_frame, text="Nb Contremarches (CM):", font=('Segoe UI', 10, 'bold'), background=colors["frame_bg"], foreground=colors["fg"]).grid(row=0, column=0, sticky="w")
+        cm_control_frame = make_dark_frame(cm_frame)
         cm_control_frame.grid(row=0, column=1, sticky="e")
         ttk.Button(cm_control_frame, text="-", command=self.decrement_cm, width=3).grid(row=0, column=0)
         ttk.Entry(cm_control_frame, textvariable=self.nombre_cm_manuel_var, width=5, justify='center').grid(row=0, column=1, padx=5)
         ttk.Button(cm_control_frame, text="+", command=self.increment_cm, width=3).grid(row=0, column=2)
 
         # Droite Bas : Hauteur contremarche
-        hcm_frame = ttk.Frame(interactive_frame)
+        hcm_frame = make_dark_frame(interactive_frame)
         hcm_frame.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
         hcm_frame.columnconfigure(1, weight=1)
-        ttk.Label(hcm_frame, text="Hauteur contremarche :", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, sticky="w")
-        hcm_control_frame = ttk.Frame(hcm_frame)
+        ttk.Label(hcm_frame, text="Hauteur contremarche :", font=('Segoe UI', 10, 'bold'), background=colors["frame_bg"], foreground=colors["fg"]).grid(row=0, column=0, sticky="w")
+        hcm_control_frame = make_dark_frame(hcm_frame)
         hcm_control_frame.grid(row=0, column=1, sticky="e")
         ttk.Button(hcm_control_frame, text="-", command=self.decrement_hcm, width=3).grid(row=0, column=0)
         ttk.Entry(hcm_control_frame, textvariable=self.hauteur_cm_souhaitee_var, width=10, justify='center').grid(row=0, column=1, padx=5)
@@ -496,19 +502,11 @@ class ModernStairCalculator(tk.Tk):
 
     def _bind_events(self):
         """Lie les événements des entrées au recalcul."""
-        # L'ancienne trace de nombre_cm_manuel_var est retirée ici car elle est déplacée ci-dessous
-        for var in [self.hauteur_totale_var, self.giron_souhaite_var, 
-                    self.hauteur_cm_souhaitee_var, 
-                    self.epaisseur_plancher_sup_var, self.epaisseur_plancher_inf_var,
-                    self.profondeur_tremie_ouverture_var, self.position_tremie_var, 
-                    self.espace_disponible_var]: 
+        for var in [self.hauteur_totale_var, self.giron_souhaite_var, self.hauteur_cm_souhaitee_var, self.epaisseur_plancher_sup_var, self.epaisseur_plancher_inf_var, self.profondeur_tremie_ouverture_var, self.position_tremie_var, self.espace_disponible_var]:
             var.trace_add("write", lambda *args, var=var: self.recalculate_and_update_ui(changed_var=var))
         
-        # REF-008: Traces spécifiques pour les variables de contremarches et de marches manuelles
-        # Le lambda est important ici pour passer l'information sur la variable qui a déclenché l'événement
         self.nombre_cm_manuel_var.trace_add("write", lambda *args: self.recalculate_and_update_ui(changed_var=self.nombre_cm_manuel_var))
         self.nombre_marches_manuel_var.trace_add("write", lambda *args: self.recalculate_and_update_ui(changed_var=self.nombre_marches_manuel_var))
-
         self.canvas.bind("<Configure>", self.update_visual_preview)
 
     def decrement_cm(self):
@@ -600,72 +598,50 @@ class ModernStairCalculator(tk.Tk):
         Recalcule les dimensions de l'escalier et met à jour l'interface.
         Gère la priorité entre la saisie manuelle de CM et de Marches.
         """
-        # REF-008: Empêche la réentrée si déjà en cours de mise à jour (évite les boucles infinies)
-        if self._is_updating_ui: 
+        if self._is_updating_ui:
             return
-
-        self._is_updating_ui = True # REF-008: Active le drapeau de mise à jour
+        self._is_updating_ui = True
         self.clear_messages()
-        if constants.DEBUG_MODE_ACTIVE: 
-            # REF-008: Meilleure identification de la variable déclencheur pour le débogage
-            trigger_name = "Init"
-            if changed_var == self.nombre_cm_manuel_var:
-                trigger_name = "Manuel CM"
-            elif changed_var == self.nombre_marches_manuel_var:
-                trigger_name = "Manuel Marches"
-            elif changed_var:
-                for attr_name in dir(self): # Recherche le nom de la variable déclencheur
-                    if getattr(self, attr_name) is changed_var:
-                        trigger_name = attr_name
-                        break
-            print(f"DEBUG: Recalcul déclenché par: {trigger_name}")
-
         try:
-            # --- Détection du paramètre modifié pour logique bidirectionnelle ---
-            # On détermine la priorité d'ajustement pour chaque couple
-            # 1. Giron <-> Nb marches
-            # 2. HCM <-> Nb contremarches
-            #
-            # On utilise le paramètre changed_var pour savoir ce que l'utilisateur a modifié
-            # et on ajuste l'autre champ en conséquence
-
-            # --- Récupération des valeurs brutes ---
-            h_tot = formatting.parser_fraction(self.hauteur_totale_var.get().strip() or "0")
+            # Récupération des valeurs d'entrée
+            h_tot = 0
+            try:
+                h_tot = formatting.parser_fraction(self.hauteur_totale_var.get().strip() or "0")
+            except Exception:
+                h_tot = 0
             giron_str = self.giron_souhaite_var.get().strip()
             h_cm_souhaitee_str = self.hauteur_cm_souhaitee_var.get().strip()
             nb_marches_manuel_str = self.nombre_marches_manuel_var.get().strip()
             nb_cm_manuel_str = self.nombre_cm_manuel_var.get().strip()
-
-            # --- Logique bidirectionnelle pour giron <-> nb marches ---
             espace_dispo_str = self.espace_disponible_var.get().strip()
+
+            # Initialisation des valeurs par défaut
+            nb_cm_final = 2
+            nb_marches_final_calculated = 1
+            giron = None
+            hcm = None
+
+            # Synchronisation bidirectionnelle
             if changed_var == self.giron_souhaite_var and h_tot > 0 and giron_str:
-                # Si l'espace disponible est renseigné, on ajuste le nombre de marches
+                giron = formatting.parser_fraction(giron_str)
                 if espace_dispo_str:
-                    giron = formatting.parser_fraction(giron_str)
-                    nb_marches = max(1, round((h_tot / giron)))
-                    self.nombre_marches_manuel_var.set(str(nb_marches))
-                    nb_cm_final = nb_marches + 1
-                    nb_marches_final_calculated = nb_marches
-                else:
-                    # Si pas d'espace dispo, on ne touche pas au nombre de marches, on laisse la valeur actuelle
                     try:
-                        nb_marches = int(nb_marches_manuel_str)
+                        espace_dispo = formatting.parser_fraction(espace_dispo_str)
+                        nb_marches = max(1, round(espace_dispo / giron))
                     except Exception:
-                        nb_marches = max(1, round(h_tot / formatting.parser_fraction(giron_str)))
-                    nb_cm_final = nb_marches + 1
-                    nb_marches_final_calculated = nb_marches
+                        nb_marches = max(1, round(h_tot / giron))
+                else:
+                    nb_marches = max(1, round(h_tot / giron))
+                self.nombre_marches_manuel_var.set(str(nb_marches))
+                nb_cm_final = nb_marches + 1
+                nb_marches_final_calculated = nb_marches
             elif changed_var == self.nombre_marches_manuel_var and h_tot > 0 and nb_marches_manuel_str.isdigit():
-                # L'utilisateur a changé le nombre de marches, on ajuste le giron
                 nb_marches = int(nb_marches_manuel_str)
                 if nb_marches > 0:
                     giron = h_tot / nb_marches
                     self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(giron, self.app_preferences))
                     nb_cm_final = nb_marches + 1
                     nb_marches_final_calculated = nb_marches
-                else:
-                    nb_cm_final = 2
-                    nb_marches_final_calculated = 1
-            # --- Logique bidirectionnelle pour HCM <-> nb contremarches ---
             elif changed_var == self.hauteur_cm_souhaitee_var and h_tot > 0 and h_cm_souhaitee_str:
                 hcm = formatting.parser_fraction(h_cm_souhaitee_str)
                 nb_cm = max(2, round(h_tot / hcm))
@@ -679,53 +655,41 @@ class ModernStairCalculator(tk.Tk):
                     self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(hcm, self.app_preferences))
                     nb_cm_final = nb_cm
                     nb_marches_final_calculated = max(1, nb_cm - 1)
-                else:
+            else:
+                # Si rien n'a changé explicitement, on tente de garder la cohérence
+                try:
+                    if nb_cm_manuel_str.isdigit():
+                        nb_cm_final = int(nb_cm_manuel_str)
+                        nb_marches_final_calculated = max(1, nb_cm_final - 1)
+                    elif nb_marches_manuel_str.isdigit():
+                        nb_marches_final_calculated = int(nb_marches_manuel_str)
+                        nb_cm_final = nb_marches_final_calculated + 1
+                except Exception:
                     nb_cm_final = 2
                     nb_marches_final_calculated = 1
-        except Exception as e:
-            nb_cm_final = 0
-            nb_marches_final_calculated = 0
-            if h_tot > 0 and h_cm_souhaitee_str:
-                h_cm_souhaitee = formatting.parser_fraction(h_cm_souhaitee_str)
-                if h_cm_souhaitee > 0:
-                    nb_cm_final = round(h_tot / h_cm_souhaitee)
-                    nb_marches_final_calculated = max(0, nb_cm_final - 1)
-            elif h_tot > 0:
-                nb_cm_final = math.ceil(h_tot / constants.HAUTEUR_CM_CONFORT_CIBLE)
-                nb_marches_final_calculated = max(0, nb_cm_final - 1)
-            if h_tot > 0:
-                nb_cm_final = max(2, nb_cm_final)
-                nb_marches_final_calculated = max(1, nb_marches_final_calculated)
-            else:
-                nb_cm_final = 0
-                nb_marches_final_calculated = 0
-            self.nombre_cm_manuel_var.set(str(nb_cm_final))
-            self.nombre_marches_manuel_var.set(str(nb_marches_final_calculated))
 
-        try:
-            # --- Calculs principaux ---
-            # Correction : la hauteur réelle par CM doit toujours être égale à la valeur saisie dans "Hauteur contremarche souhaitée"
-            if changed_var == self.hauteur_cm_souhaitee_var and h_tot > 0 and h_cm_souhaitee_str:
-                # L'utilisateur a modifié la hauteur contremarche souhaitée :
-                h_reel_final = formatting.parser_fraction(h_cm_souhaitee_str)
+            # Calcul de la hauteur réelle par CM
+            if h_tot > 0 and nb_cm_final > 0:
+                h_reel_final = h_tot / nb_cm_final
             else:
-                # Cas général : on recalcule normalement
-                h_reel_final = h_tot / nb_cm_final if nb_cm_final else 0
+                h_reel_final = 0
+            # Si l'utilisateur a modifié la hauteur contremarche, on force la valeur affichée
+            if changed_var == self.hauteur_cm_souhaitee_var and h_cm_souhaitee_str:
+                try:
+                    h_reel_final = formatting.parser_fraction(h_cm_souhaitee_str)
+                except Exception:
+                    pass
 
-            self.nombre_cm_ajuste_var.set(nb_cm_final) # Variable interne pour les calculs
+            self.nombre_cm_ajuste_var.set(nb_cm_final)
             self.nombre_marches_final_display_var.set(str(nb_marches_final_calculated))
-            
-            giron = None
-            if giron_str:
-                giron = formatting.parser_fraction(giron_str)
-            else:
-                blondel_cible_moyenne = (constants.BLONDEL_MIN_POUCES + constants.BLONDEL_MAX_POUCES) / 2
-                giron_deduit = blondel_cible_moyenne - (2 * h_reel_final)
-                giron = max(constants.GIRON_MIN_REGLEMENTAIRE, min(giron_deduit, constants.GIRON_MAX_REGLEMENTAIRE))
-                self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(giron, self.app_preferences)) 
-            
-            if giron is None: raise ValueError("Giron indéterminé.")
 
+            # Calcul du giron si non défini
+            if giron is None:
+                try:
+                    giron = formatting.parser_fraction(giron_str)
+                except Exception:
+                    giron = 10.0
+            # Calcul du reste des paramètres
             params = {
                 "hauteur_totale_escalier": h_tot,
                 "giron_souhaite": giron,
@@ -737,88 +701,59 @@ class ModernStairCalculator(tk.Tk):
                 "position_tremie_ouverture_entree": self.position_tremie_var.get(),
                 "espace_disponible_entree": self.espace_disponible_var.get(),
             }
-            
-            self.latest_results = calculations.calculer_dimensions_escalier(loaded_app_preferences_dict=self.app_preferences, **params)
-            
+            try:
+                self.latest_results = calculations.calculer_dimensions_escalier(loaded_app_preferences_dict=self.app_preferences, **params)
+            except Exception:
+                self.latest_results = {}
             self.latest_results["nombre_contremarches"] = nb_cm_final
             self.latest_results["hauteur_reelle_contremarche"] = h_reel_final
-            self.latest_results["giron_utilise"] = giron 
-            self.latest_results["nombre_girons"] = nb_marches_final_calculated 
-            longueur_totale = self.latest_results["nombre_girons"] * giron
+            self.latest_results["giron_utilise"] = giron
+            self.latest_results["nombre_girons"] = nb_marches_final_calculated
+            longueur_totale = nb_marches_final_calculated * giron
             self.latest_results["longueur_calculee_escalier"] = longueur_totale
             if longueur_totale > 0 and h_tot > 0:
                 self.latest_results["angle_escalier"] = math.degrees(math.atan(h_tot / longueur_totale))
             else:
-                self.latest_results["angle_escalier"] = 90.0 if h_tot > 0 else 0.0
-
+                self.latest_results["angle_escalier"] = 0.0
             if longueur_totale > 0 and h_tot > 0:
                 self.latest_results["longueur_limon_approximative"] = math.sqrt(h_tot**2 + longueur_totale**2)
             else:
-                self.latest_results["longueur_limon_approximative"] = h_tot
-            
-            profondeur_tremie = formatting.parser_fraction(self.profondeur_tremie_ouverture_var.get() or "0")
-            position_tremie = formatting.parser_fraction(self.position_tremie_var.get() or "0")
-            
+                self.latest_results["longueur_limon_approximative"] = 0.0
+            profondeur_tremie = 0
+            position_tremie = 0
+            try:
+                profondeur_tremie = formatting.parser_fraction(self.profondeur_tremie_ouverture_var.get() or "0")
+                position_tremie = formatting.parser_fraction(self.position_tremie_var.get() or "0")
+            except Exception:
+                pass
             if profondeur_tremie > 0:
-                hauteur_sous_plafond = h_tot - params["epaisseur_plancher_sup"] 
+                hauteur_sous_plafond = h_tot - params["epaisseur_plancher_sup"]
                 min_echappee = float('inf')
-                for i in range(1, nb_cm_final + 1): 
-                    x_point_on_stair = (i-1) * giron 
-                    y_point_on_stair = (i-1) * h_reel_final 
-                    
+                for i in range(1, nb_cm_final + 1):
+                    x_point_on_stair = (i-1) * giron
+                    y_point_on_stair = (i-1) * h_reel_final
                     if x_point_on_stair >= position_tremie and x_point_on_stair < (position_tremie + profondeur_tremie):
                         echappee_actuelle = hauteur_sous_plafond - y_point_on_stair
                         min_echappee = min(min_echappee, echappee_actuelle)
-                
                 if min_echappee != float('inf'):
                     self.latest_results["min_echappee_calculee"] = min_echappee
                 else:
                     self.latest_results["min_echappee_calculee"] = None
             else:
                 self.latest_results["min_echappee_calculee"] = None
-
             self.update_results_display()
             self.update_warnings_display()
             self.update_visual_preview()
             self.update_reports()
-
-        except (ValueError, ZeroDivisionError, tk.TclError) as e:
+        except Exception as e:
             self.conformity_status_var.set("ERREUR DE SAISIE")
             self.warnings_var.set(f"Format invalide ou données insuffisantes.\n({e})")
             self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
             self.clear_results_display()
-            if constants.DEBUG_MODE_ACTIVE: raise
-        except Exception as e:
-            self.conformity_status_var.set("ERREUR INATTENDUE")
-            self.warnings_var.set(f"Une erreur inattendue est survenue : {e}.")
-            self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
-            self.clear_results_display()
-            if constants.DEBUG_MODE_ACTIVE: raise
+            if constants.DEBUG_MODE_ACTIVE:
+                raise
         finally:
-            self._is_updating_ui = False # REF-008: Désactive le drapeau une fois la mise à jour terminée
-
-    def clear_messages(self):
-        """Nettoie tous les messages d'avertissement et de conformité."""
-        self.conformity_status_var.set("EN ATTENTE")
-        self.conformity_label.config(foreground=self.themes[self.current_theme]["fg"])
-        self.warnings_var.set("")
-        self.hauteur_cm_message_var.set("")
-        self.giron_message_var.set("")
-        self.echappee_message_var.set("")
-        self.blondel_message_var.set("")
-        self.longueur_disponible_message_var.set("")
-        self.angle_message_var.set("")
-
-    def clear_results_display(self):
-        """Efface les valeurs affichées dans les champs de résultats."""
-        self.hauteur_reelle_cm_res_var.set("")
-        self.longueur_totale_res_var.set("")
-        self.angle_res_var.set("")
-        self.limon_res_var.set(""); 
-        self.echappee_res_var.set("")
-        self.longueur_min_escalier_var.set("")
-        if hasattr(self, 'report_text'): self.report_text.delete("1.0", tk.END)
-        if hasattr(self, 'table_text'): self.table_text.delete("1.0", tk.END)
+            self._is_updating_ui = False
 
     def update_results_display(self):
         """Met à jour les StringVar des résultats avec les valeurs calculées."""
@@ -826,17 +761,12 @@ class ModernStairCalculator(tk.Tk):
         prefs = self.app_preferences
         df = lambda val: formatting.decimal_to_fraction_str(val, prefs) if val is not None else "N/A"
         df_mm = lambda val: f"{df(val)} ({round(val * constants.POUCE_EN_MM)} mm)" if val is not None else "N/A"
-
         self.hauteur_reelle_cm_res_var.set(df_mm(res.get("hauteur_reelle_contremarche")))
-        # REF-009: Ajout explicite du guillemet pour l'affichage du giron.
-        self.giron_souhaite_var.set(df(res.get('giron_utilise'))) 
+        self.giron_souhaite_var.set(df(res.get('giron_utilise')))
         self.longueur_totale_res_var.set(df_mm(res.get("longueur_calculee_escalier")))
         self.angle_res_var.set(f"{res.get('angle_escalier', 0):.2f}°")
         self.limon_res_var.set(df_mm(res.get("longueur_limon_approximative")))
-
-        # REF-009: Ajout de l'échappée et de la longueur minimale de l'escal
         self.echappee_res_var.set(df_mm(res.get("min_echappee_calculee")))
-        
         nb_girons = res.get("nombre_girons", 0)
         longueur_min_giron_req = nb_girons * constants.GIRON_MIN_REGLEMENTAIRE
         self.longueur_min_escalier_var.set(f"Req: {df_mm(longueur_min_giron_req)}")
@@ -1026,6 +956,17 @@ class ModernStairCalculator(tk.Tk):
         """Fonctionnalité future : exporte le rapport en PDF."""
         messagebox.showinfo("Fonctionnalité future", "L'exportation en PDF sera bientôt disponible !", parent=self)
 
+    def clear_messages(self):
+        """Nettoie tous les messages d'avertissement et de conformité."""
+        self.conformity_status_var.set("EN ATTENTE")
+        self.conformity_label.config(foreground=self.themes[self.current_theme]["fg"])
+        self.warnings_var.set("")
+        self.hauteur_cm_message_var.set("")
+        self.giron_message_var.set("")
+        self.echappee_message_var.set("")
+        self.blondel_message_var.set("")
+        self.longueur_disponible_message_var.set("")
+        self.angle_message_var.set("")
 
 if __name__ == "__main__":
     app = ModernStairCalculator()

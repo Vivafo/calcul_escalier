@@ -295,6 +295,11 @@ class ProfondeurCoupeApp:
             "prof_depassement_P_H": self.prof_depassement_P_H_var.get()
         }
         if not self._validate_inputs(current_values):
+            # Affiche un message d'erreur clair dans les résultats
+            self.h90_result_var.set("H90: -- mm")
+            self.h90_interpret_var.set("Entrée(s) invalide(s)")
+            self.h45_result_var.set("H45: -- mm")
+            self.h45_interpret_var.set("")
             return
 
         try:
@@ -303,7 +308,16 @@ class ProfondeurCoupeApp:
             epaisseur_bois_H_mm = self._get_value_mm(self.epaisseur_bois_H_var.get())
             prof_depassement_P_H_mm = self._get_value_mm(self.prof_depassement_P_H_var.get())
         except ValueError as e: # Erreur de parser_fraction
-            messagebox.showerror("Erreur de Valeur", f"Valeur numérique invalide : {e}", parent=self.master)
+            self.h90_result_var.set("H90: Erreur")
+            self.h90_interpret_var.set(f"Erreur de valeur : {e}")
+            self.h45_result_var.set("H45: Erreur")
+            self.h45_interpret_var.set("")
+            return
+        except Exception as e:
+            self.h90_result_var.set("H90: Erreur")
+            self.h90_interpret_var.set(f"Erreur inattendue : {e}")
+            self.h45_result_var.set("H45: Erreur")
+            self.h45_interpret_var.set("")
             return
 
         # Calcul H90
@@ -424,6 +438,7 @@ if __name__ == "__main__":
     # # Maintenant, les imports comme `from utils.formatting import parser_fraction` devraient mieux fonctionner
     # # s'il est dans un sous-dossier de CalculateurEscalier et que CalculateurEscalier est le dossier parent.
 
+    print("Démarrage du programme…")
     root = tk.Tk()
     app = ProfondeurCoupeApp(root)
     root.mainloop()
