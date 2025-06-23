@@ -13,58 +13,49 @@ except ImportError:
 
 def decimal_to_fraction_str(decimal_val, app_preferences=None, denominator_limit=None):
     """
-    Convertit une valeur décimale en une chaîne de caractères représentant une fraction en pouces.
-    Ex: 9.25 -> "9 1/4"
-    Ajuste la précision du dénominateur en fonction des préférences de l'application.
-    Ne retourne PAS le guillemet à la fin.
+    Convertit une valeur décimale en représentation fractionnaire impériale.
+    Restreint aux dénominateurs standards du système impérial: 2, 4, 8, 16, 32, 64.
     """
     if decimal_val is None:
         return "N/A"
 
-    # Gérer les cas de valeurs très proches de zéro mais négatives, affichées comme "0"
     if -0.0001 < decimal_val < 0.0001:
         return "0"
 
     if denominator_limit is None and app_preferences:
-        denominator_limit = app_preferences.get("fraction_precision_denominator", constants.DEFAULT_DENOMINATEUR_PRECISION)
+        denominator_limit = app_preferences.get("fraction_precision_denominator", 32)
     elif denominator_limit is None:
-        denominator_limit = constants.DEFAULT_DENOMINATEUR_PRECISION
+        denominator_limit = 32
 
-    # Limiter le dénominateur aux puissances de 2
-    possible_denominators = [2, 4, 8, 16, 32, 64]
-    current_denominator_limit = 1
-    for d in possible_denominators:
-        if d <= denominator_limit:
-            current_denominator_limit = d
-        else:
-            break
+    # CORRECTION: Restreindre aux dénominateurs impériaux uniquement
+    imperial_denominators = [2, 4, 8, 16, 32, 64]
+    allowed_denominators = [d for d in imperial_denominators if d <= denominator_limit]
 
     whole = int(math.floor(abs(decimal_val)))
     fraction = abs(decimal_val) - whole
 
     if fraction == 0:
-        return str(int(decimal_val)) # Retourne juste l'entier sans fraction ni guillemet
+        return str(int(decimal_val))
 
-    # Trouver la meilleure approximation de la fraction
+    # Trouver la meilleure approximation avec dénominateurs impériaux uniquement
     best_numerator = 0
     best_denominator = 1
     min_diff = fraction
 
-    for denominator in range(1, current_denominator_limit + 1):
+    for denominator in allowed_denominators:  # Utiliser seulement les dénominateurs impériaux
         numerator = round(fraction * denominator)
         current_diff = abs(fraction - (numerator / denominator))
-        # Si la différence est très petite, considérer comme exact
-        if current_diff < min_diff - 1e-9: # Utiliser une tolérance pour la comparaison
+        if current_diff < min_diff - 1e-9:
             min_diff = current_diff
             best_numerator = numerator
             best_denominator = denominator
-            if min_diff < 0.0001: # Assez proche pour arrêter
+            if min_diff < 0.0001:
                 break
     
     # Gérer les cas où le numérateur pourrait être le dénominateur (ex: 4/4 devient 1)
     if best_numerator == best_denominator:
         whole += 1
-        fraction_str = "" # Pas de partie fractionnaire
+        fraction_str = ""
     elif best_numerator == 0:
         fraction_str = ""
     else:
@@ -77,13 +68,12 @@ def decimal_to_fraction_str(decimal_val, app_preferences=None, denominator_limit
     if whole == 0:
         if fraction_str:
             return f"-{fraction_str}" if decimal_val < 0 else fraction_str
-        else: # Cas où c'est 0.0 et pas de fraction (ou 0/X)
+        else:
             return "0"
     else:
         if fraction_str:
-            # MODIFIÉ: Ne retourne PAS le guillemet ici.
             return f"-{whole} {fraction_str}" if decimal_val < 0 else f"{whole} {fraction_str}"
-        else: # Cas où c'est un entier (ex: 5.0)
+        else:
             return str(int(decimal_val)) # Retourne juste l'entier
 
 
