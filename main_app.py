@@ -9,6 +9,17 @@ from core import constants, calculations
 from utils import formatting, reporting, file_operations
 from gui.dialogs import PreferencesDialog, LaserDialog
 
+# --- Vérification et création du dossier et fichier de préférences ---
+from core.constants import DEFAULTS_FILE, DEFAULT_APP_PREFERENCES
+
+# Vérifier si le dossier data existe, sinon le créer
+os.makedirs(os.path.dirname(DEFAULTS_FILE), exist_ok=True)
+
+# Vérifier si le fichier de préférences existe, sinon le créer avec les valeurs par défaut
+if not os.path.exists(DEFAULTS_FILE):
+    with open(DEFAULTS_FILE, 'w') as f:
+        json.dump(DEFAULT_APP_PREFERENCES, f, indent=4)
+
 class ModernStairCalculator(tk.Tk):
     """
     Classe principale de l'interface du calculateur d'escalier.
@@ -842,6 +853,43 @@ class ModernStairCalculator(tk.Tk):
         self.conformity_status_var.set("EN ATTENTE")
         self.warnings_var.set("")
         self.hauteur_totale_ecart_message_var.set("") # Effacer le nouvel indicateur
+
+    def update_visual_preview(self, event=None):
+        """
+        Met à jour l'aperçu visuel 2D de l'escalier sur le canvas.
+        'event' est passé par l'événement <Configure> de Tkinter, mais peut être None si appelé manuellement.
+        """
+        # Effacer le canvas avant de redessiner
+        self.canvas.delete("all")
+        
+        # Récupérer les dimensions du canvas
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        
+        # Si des résultats de calcul sont disponibles, dessiner l'escalier
+        if self.latest_results:
+            # Exemple : dessiner des lignes pour représenter l'escalier
+            nombre_girons = self.latest_results.get("nombre_girons", 0)
+            if nombre_girons > 0:
+                # Calculer des proportions pour dessiner
+                giron = self.latest_results.get("giron_utilise", 0)
+                hauteur_cm = self.latest_results.get("hauteur_reelle_contremarche", 0)
+                # Ajuster l'échelle pour que l'escalier s'adapte au canvas
+                scale_x = canvas_width / (nombre_girons * giron) if giron > 0 else 1
+                scale_y = canvas_height / (nombre_girons * hauteur_cm) if hauteur_cm > 0 else 1
+                scale = min(scale_x, scale_y) * 0.8  # Réduire un peu pour laisser de la marge
+                
+                x = 50  # Point de départ en x (marge)
+                y = canvas_height - 50  # Point de départ en y (bas du canvas)
+                
+                # Dessiner chaque marche
+                for _ in range(nombre_girons):
+                    # Dessiner le giron (ligne horizontale)
+                    self.canvas.create_line(x, y, x + giron * scale, y, fill=self.themes[self.current_theme]["canvas_line"])
+                    x += giron * scale
+                    # Dessiner la contremarche (ligne verticale)
+                    self.canvas.create_line(x, y, x, y - hauteur_cm * scale, fill=self.themes[self.current_theme]["canvas_line"])
+                    y -= hauteur_cm * scale
 
 # --- DÉBUT DU BLOC DE DÉMARRAGE DE L'APPLICATION ---
 # C'est ce bloc qui permet à l'application Tkinter de se lancer
