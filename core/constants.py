@@ -10,10 +10,12 @@ POUCE_EN_MM = 25.4
 
 # Constantes pour le calcul des escaliers (selon le Code de construction du Québec, version récente et guide APCHQ)
 
-# Hauteur des contremarches (CM)  avec un test dc frase inutile
+# Hauteur des contremarches (CM)
 HAUTEUR_CM_MIN_REGLEMENTAIRE = 5.0   # pouces (127 mm) - Minimum selon le code
 HAUTEUR_CM_MAX_REGLEMENTAIRE = 8.25  # pouces (209 mm) - Maximum selon le code (souvent 8 1/4)
 HAUTEUR_CM_CONFORT_CIBLE = 7.5       # pouces (190.5 mm) - Cible pour le confort
+HAUTEUR_TOTALE_MAX = 144.0           # pouces (3657.6 mm) - Exemple de hauteur totale maximale pour fallback
+
 
 # Giron (profondeur de la marche)
 GIRON_MIN_REGLEMENTAIRE = 8.25      # pouces (209 mm) - Minimum selon le code (souvent 8 1/4)
@@ -30,10 +32,6 @@ HAUTEUR_LIBRE_MIN_REGLEMENTAIRE = 78.74 # pouces (2000 mm ou 6'6") - Minimum sel
 # Angles de pente
 ANGLE_CONFORT_STANDARD_MAX = 35.0  # degrés - Au-delà, l'escalier est considéré "raide"
 ANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX = 42.0 # degrés - Angle max acceptable, au-delà, potentiellement non conforme/dangereux
-ANGLE_STANDARD_MAX = 35.0  # degrés - Valeur standard maximale pour l'angle d'un escalier confortableANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX = 42.0 # degrés - Angle max acceptable, au-delà, potentiellement non conforme/dangereux
-# Note: ANGLE_STANDARD_MAX a été mentionné dans le code main_app.py mais n'était pas défini ici.
-# Je l'ai retiré du main_app.py pour éviter une erreur, mais si vous en avez besoin, définissez-le ici.
-# Pour l'instant, je vais utiliser ANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX comme limite supérieure si ANGLE_STANDARD_MAX n'existe pas.
 
 # Précision par défaut pour les fractions (par exemple, 16 pour les 1/16 de pouce)
 DEFAULT_DENOMINATEUR_PRECISION = 16 

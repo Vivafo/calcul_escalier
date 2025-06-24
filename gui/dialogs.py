@@ -8,6 +8,7 @@ from utils.file_operations import save_application_preferences
 class LaserDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent # Sauvegarde la référence au parent
         self.title("Assistance Laser")
         ttk.Label(self, text="Cette fonctionnalité sera bientôt disponible.").pack(padx=20, pady=20)
         self.transient(parent)
@@ -25,11 +26,13 @@ class PreferencesDialog(tk.Toplevel):
         self.geometry("450x300")
         self.resizable(False, False)
 
+        # Assurez-vous que les clés existent dans app_prefs avant de les utiliser pour la valeur par défaut
+        # Utilisez .get() avec une valeur par défaut pour éviter les KeyError
         self.vars = {
-            "default_tread_thickness": tk.StringVar(value=self.app_preferences.get("default_tread_thickness")),
-            "default_riser_thickness": tk.StringVar(value=self.app_preferences.get("default_riser_thickness")),
-            "default_tread_width_straight": tk.StringVar(value=self.app_preferences.get("default_tread_width_straight")),
-            "display_fraction_precision": tk.StringVar(value=self.app_preferences.get("display_fraction_precision")),
+            "default_tread_thickness": tk.StringVar(value=self.app_preferences.get("default_tread_thickness", "1 1/16")),
+            "default_riser_thickness": tk.StringVar(value=self.app_preferences.get("default_riser_thickness", "3/4")),
+            "default_tread_width_straight": tk.StringVar(value=self.app_preferences.get("default_tread_width_straight", "9 1/4")),
+            "display_fraction_precision": tk.StringVar(value=self.app_preferences.get("fraction_precision_denominator", "16")), # Correction de la clé ici aussi
         }
 
         self._create_widgets()
@@ -58,7 +61,8 @@ class PreferencesDialog(tk.Toplevel):
         precision_combobox = ttk.Combobox(
             main_frame,
             textvariable=self.vars["display_fraction_precision"],
-            values=[str(d) for d in sorted(constants.ALLOWED_DENOMINATORS)],
+            # Utilise constants.ALLOWED_DENOMINATORS si elle existe, sinon une liste par défaut
+            values=[str(d) for d in sorted(getattr(constants, 'ALLOWED_DENOMINATORS', [2, 4, 8, 16, 32, 64]))],
             state="readonly",
             width=12
         )
@@ -72,10 +76,32 @@ class PreferencesDialog(tk.Toplevel):
         ttk.Button(btn_frame, text="Annuler", command=self.destroy).pack(side="left")
 
     def _save_and_close(self):
-        for key, var in self.vars.items():
-            self.app_preferences[key] = var.get()
+        # Valider les entrées avant de sauvegarder
+        errors = []
+        for key in ["default_tread_thickness", "default_riser_thickness", "default_tread_width_straight"]:
+            try:
+                parser_fraction(self.vars[key].get())
+            except ValueError:
+                errors.append(f"Format invalide pour '{key.replace('_', ' ').title()}'.")
         
-        save_application_preferences(self.app_preferences, parent=self)
+        try:
+            precision = int(self.vars["display_fraction_precision"].get())
+            if precision not in getattr(constants, 'ALLOWED_DENOMINATORS', [2, 4, 8, 16, 32, 64]):
+                errors.append("Précision de fraction non valide.")
+        except ValueError:
+            errors.append("Précision de fraction non numérique.")
+
+        if errors:
+            messagebox.showerror("Erreur de validation", "\n".join(errors), parent=self)
+            return
+
+        for key, var in self.vars.items():
+            if key == "display_fraction_precision":
+                self.app_preferences["fraction_precision_denominator"] = int(var.get())
+            else:
+                self.app_preferences[key] = var.get()
+        
+        save_application_preferences(self.app_preferences) # Plus besoin de passer 'parent=self' ici
         
         self.destroy()
         
