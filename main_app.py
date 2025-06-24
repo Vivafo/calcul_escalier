@@ -398,6 +398,10 @@ class ModernStairCalculator(tk.Tk):
         ttk.Entry(hcm_control_frame, textvariable=self.hauteur_cm_souhaitee_var, width=10, justify='center').grid(row=0, column=1, padx=5)
         ttk.Button(hcm_control_frame, text="+", command=self.increment_hcm, width=3).grid(row=0, column=2)
 
+        # Nouveau: Bouton pour appliquer les valeurs idéales
+        apply_ideal_button = ttk.Button(interactive_frame, text="Appliquer Valeurs Idéales", command=self.apply_ideal_values)
+        apply_ideal_button.grid(row=2, column=0, columnspan=2, pady=10) # Positionnement en dessous des 4 cadres, étendu sur 2 colonnes
+
     def _create_results_frame(self, parent):
         """Crée le cadre pour l'affichage des résultats du calcul."""
         results_frame = ttk.LabelFrame(parent, text="3. Résultats et Conformité")
@@ -450,25 +454,26 @@ class ModernStairCalculator(tk.Tk):
 
 
     def _update_indicator_style(self, var, widget):
-        """Met à jour le style (couleur) d'un label d'indicateur en fonction de son contenu."""
+        """Version améliorée avec plus d'indicateurs."""
         text = var.get()
         style_map = {
-            "NON CONFORME": "Indicator.Red.TLabel", "TRÈS raide": "Indicator.Red.TLabel",
-            "Confort Limité": "Indicator.Yellow.TLabel", "Pente raide": "Indicator.Yellow.TLabel",
-            "Pente douce": "Indicator.Green.TLabel", "Pente standard": "Indicator.Green.TLabel",
-            "OK": "Indicator.Green.TLabel"
+            "NON CONFORME": ("Indicator.Red.TLabel", "❌ NON CONFORME"),
+            "TRÈS raide": ("Indicator.Red.TLabel", "❌ TRÈS RAIDE"),
+            "LIMITE": ("Indicator.Yellow.TLabel", "⚠️ LIMITE"),
+            "Confort Limité": ("Indicator.Yellow.TLabel", "⚠️ CONFORT LIMITÉ"),
+            "OK": ("Indicator.Green.TLabel", "✅ OK"),
+            "OPTIMAL": ("Indicator.Green.TLabel", "✅ OPTIMAL")
         }
+        
         style = "TLabel"
-        display_text = ""
-        for key, s in style_map.items():
+        display_text = text
+        
+        for key, (s, display) in style_map.items():
             if key in text:
                 style = s
-                display_text = key
+                display_text = display
                 break
-        if "OK" in text: 
-            style = "Indicator.Green.TLabel"
-            display_text = "OK"
-
+        
         widget.config(style=style, text=display_text)
 
     def _create_warnings_frame(self, parent):
@@ -741,6 +746,12 @@ class ModernStairCalculator(tk.Tk):
                     self.latest_results["min_echappee_calculee"] = None
             else:
                 self.latest_results["min_echappee_calculee"] = None
+
+            # --- MISE À JOUR DES VARIABLES D'AFFICHAGE POUR LA BOÎTE 2 ---
+            # Ceci garantit que la boîte 2 reflète toujours les valeurs réelles utilisées
+            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(h_reel_final, self.app_preferences))
+            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(giron, self.app_preferences))
+
             self.update_results_display()
             self.update_warnings_display()
             self.update_visual_preview()
@@ -772,26 +783,42 @@ class ModernStairCalculator(tk.Tk):
         self.longueur_min_escalier_var.set(f"Req: {df_mm(longueur_min_giron_req)}")
 
     def update_warnings_display(self):
-        """Met à jour les messages d'avertissement et le statut global."""
+        """Version améliorée avec ajustements automatiques."""
         if not self.latest_results:
             return
+        
         res = self.latest_results
         warnings_list = []
         is_conform = True
-
+        
         h_reel = res.get("hauteur_reelle_contremarche", 0)
         giron = res.get("giron_utilise", 0)
-        echappee = res.get("min_echappee_calculee")
-        angle = res.get("angle_escalier", 0)
-        longueur_calculee = res.get("longueur_calculee_escalier", 0)
-        espace_dispo_str = res.get("espace_disponible_entree", "")
         
+        # Validation hauteur contremarche avec proposition d'ajustement
+        hauteur_cm_mm = h_reel * constants.POUCE_EN_MM
+        # --- Validation hauteur contremarche (UN SEUL BLOC, DÉDUPLIQUÉ) ---
         if not (constants.HAUTEUR_CM_MIN_REGLEMENTAIRE <= h_reel <= constants.HAUTEUR_CM_MAX_REGLEMENTAIRE):
-            warnings_list.append(f"• H. CM non conforme.")
+            warnings_list.append(f"• H. CM non conforme (min {constants.HAUTEUR_CM_MIN_REGLEMENTAIRE}\" - max {constants.HAUTEUR_CM_MAX_REGLEMENTAIRE}\").")
             self.hauteur_cm_message_var.set("NON CONFORME")
             is_conform = False
-        else: self.hauteur_cm_message_var.set("OK")
-
+        elif h_reel < constants.HAUTEUR_CM_CONFORT_CIBLE - 0.25:  # Exemple: si en dessous de 7 1/4"
+            self.hauteur_cm_message_var.set("Confort Limité")
+            warnings_list.append(f"• H. CM un peu basse, confort limité.")
+        elif h_reel > constants.HAUTEUR_CM_CONFORT_CIBLE + 0.25:  # Exemple: si au-dessus de 7 3/4"
+            self.hauteur_cm_message_var.set("Confort Limité")
+            warnings_list.append(f"• H. CM un peu haute, confort limité.")
+        else:
+            self.hauteur_cm_message_var.set("OK")
+        
+        # Validation Blondel avec indication de la valeur
+        blondel_val = (2 * h_reel) + giron
+        evaluation, _, _ = self.obtenir_evaluation_blondel_angle(h_reel, giron)
+        if evaluation == "⚠️ LIMITE":
+            warnings_list.append("• Formule de Blondel en limite de confort")
+            self.blondel_message_var.set(f"LIMITE ({formatting.decimal_to_fraction_str(blondel_val, self.app_preferences)}\")")
+        else:
+            self.blondel_message_var.set(f"OK ({formatting.decimal_to_fraction_str(blondel_val, self.app_preferences)}\")")
+        
         if not (constants.GIRON_MIN_REGLEMENTAIRE <= giron <= constants.GIRON_MAX_REGLEMENTAIRE):
             warnings_list.append(f"• Giron non conforme.")
             self.giron_message_var.set("NON CONFORME")
@@ -799,44 +826,8 @@ class ModernStairCalculator(tk.Tk):
         elif giron < constants.GIRON_CONFORT_MIN_RES_STANDARD:
             warnings_list.append(f"• Giron conforme mais étroit.")
             self.giron_message_var.set("Confort Limité")
-        else: self.giron_message_var.set("OK")
-
-        blondel_val = (2 * h_reel) + giron
-        if not (constants.BLONDEL_MIN_POUCES <= blondel_val <= constants.BLONDEL_MAX_POUCES):
-            warnings_list.append(f"• Formule de Blondel (2H+G) non respectée.")
-            self.blondel_message_var.set(f"NON CONFORME ({formatting.decimal_to_fraction_str(blondel_val, self.app_preferences)}\")") # Ajout valeur pour Blondel
-            is_conform = False
-        else: self.blondel_message_var.set(f"OK ({formatting.decimal_to_fraction_str(blondel_val, self.app_preferences)}\")")
-
-        if echappee is not None:
-            if echappee < constants.HAUTEUR_LIBRE_MIN_REGLEMENTAIRE:
-                warnings_list.append(f"• Échappée insuffisante.")
-                self.echappee_message_var.set("NON CONFORME")
-                is_conform = False
-            else: self.echappee_message_var.set("OK")
-        else: self.echappee_message_var.set("N/A")
-
-        if espace_dispo_str:
-            try: 
-                espace_dispo = formatting.parser_fraction(espace_dispo_str)
-                if longueur_calculee > espace_dispo:
-                    warnings_list.append("• L'escalier dépasse l'espace disponible.")
-                    self.longueur_disponible_message_var.set("NON CONFORME")
-                    is_conform = False
-                else: self.longueur_disponible_message_var.set("OK")
-            except ValueError:
-                warnings_list.append("• Espace disponible : format invalide.")
-                self.longueur_disponible_message_var.set("ERREUR")
-                is_conform = False
-        else: self.longueur_disponible_message_var.set("N/A")
-
-        if angle > constants.ANGLE_CONFORT_RAIDE_MAIS_CONFORME_MAX:
-             warnings_list.append("• Angle très raide, confort potentiellement limité.") 
-             self.angle_message_var.set("TRÈS raide")
-        elif angle > constants.ANGLE_STANDARD_MAX: # Changed from ANGLE_CONFORT_STANDARD_MAX to ANGLE_STANDARD_MAX if it exists
-            warnings_list.append("• Angle raide, confort limité.")
-            self.angle_message_var.set("Pente raide")
-        else: self.angle_message_var.set("Pente standard")
+        else:
+            self.giron_message_var.set("OK")
 
         if not is_conform:
             self.conformity_status_var.set("✗ NON CONFORME")
@@ -967,6 +958,44 @@ class ModernStairCalculator(tk.Tk):
         self.blondel_message_var.set("")
         self.longueur_disponible_message_var.set("")
         self.angle_message_var.set("")
+
+    def clear_results_display(self):
+        """Efface les résultats affichés dans l’interface."""
+        self.hauteur_reelle_cm_res_var.set("")
+        self.giron_souhaite_var.set("")
+        self.longueur_totale_res_var.set("")
+        self.angle_res_var.set("")
+        self.limon_res_var.set("")
+        self.echappee_res_var.set("")
+        self.longueur_min_escalier_var.set("")
+        self.blondel_message_var.set("")
+        self.hauteur_cm_message_var.set("")
+        self.giron_message_var.set("")
+        self.echappee_message_var.set("")
+        self.longueur_disponible_message_var.set("")
+        self.angle_message_var.set("")
+        self.conformity_status_var.set("EN ATTENTE")
+        self.warnings_var.set("")
+
+    def apply_ideal_values(self):
+        """
+        Applique les valeurs idéales (confortables) pour la hauteur de contremarche et le giron,
+        puis déclenche un recalcul.
+        """
+        self._is_updating_ui = True # Empêche les déclencheurs de boucler
+        try:
+            # Récupérer les valeurs idéales des constantes
+            ideal_hcm = constants.HAUTEUR_CM_CONFORT_CIBLE
+            ideal_giron = constants.GIRON_CONFORT_MIN_RES_STANDARD
+
+            # Convertir en chaîne de fraction pour l'affichage dans les StringVar
+            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(ideal_hcm, self.app_preferences))
+            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(ideal_giron, self.app_preferences))
+
+            # Puis déclencher le recalcul complet
+            self.recalculate_and_update_ui(changed_var=self.hauteur_cm_souhaitee_var) # On simule un changement de HCM pour lancer le calcul
+        finally:
+            self._is_updating_ui = False
 
 if __name__ == "__main__":
     app = ModernStairCalculator()
