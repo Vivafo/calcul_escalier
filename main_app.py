@@ -27,7 +27,9 @@ class ModernStairCalculator(tk.Tk):
     """
     def __init__(self):
         super().__init__()
-        
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")  # ou "default", "alt", etc.
+
         # --- Configuration de la fenêtre principale ---
         self.title(f"Calculateur d'Escalier Pro v{constants.VERSION_PROGRAMME}")
         self.geometry("1200x850")
@@ -73,7 +75,7 @@ class ModernStairCalculator(tk.Tk):
         self._create_main_layout() # <-- Cette fonction crée les labels d'entrée
 
         self._bind_events()
-        self.switch_theme("light")
+       
         self.update_debug_menu_label() # Appel initial pour le label du menu débogage
         # REF-007: Appel initial pour mettre à jour les labels d'entrée avec/sans codes de référence
         self._update_input_labels_for_debug() 
@@ -179,9 +181,10 @@ class ModernStairCalculator(tk.Tk):
         # Menu Affichage (pour le thème)
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Affichage", menu=view_menu)
-        view_menu.add_command(label="Thème Clair", command=lambda: self.switch_theme("light"))
-        view_menu.add_command(label="Thème Sombre", command=lambda: self.switch_theme("dark"))
+     
+     
 
+        
         # Menu Outils
         tools_menu = tk.Menu(menubar, tearoff=0)
         self.tools_menu = tools_menu 
@@ -874,22 +877,33 @@ class ModernStairCalculator(tk.Tk):
                 # Calculer des proportions pour dessiner
                 giron = self.latest_results.get("giron_utilise", 0)
                 hauteur_cm = self.latest_results.get("hauteur_reelle_contremarche", 0)
-                # Ajuster l'échelle pour que l'escalier s'adapte au canvas
-                scale_x = canvas_width / (nombre_girons * giron) if giron > 0 else 1
-                scale_y = canvas_height / (nombre_girons * hauteur_cm) if hauteur_cm > 0 else 1
-                scale = min(scale_x, scale_y) * 0.8  # Réduire un peu pour laisser de la marge
                 
-                x = 50  # Point de départ en x (marge)
-                y = canvas_height - 50  # Point de départ en y (bas du canvas)
-                
-                # Dessiner chaque marche
-                for _ in range(nombre_girons):
-                    # Dessiner le giron (ligne horizontale)
-                    self.canvas.create_line(x, y, x + giron * scale, y, fill=self.themes[self.current_theme]["canvas_line"])
-                    x += giron * scale
-                    # Dessiner la contremarche (ligne verticale)
-                    self.canvas.create_line(x, y, x, y - hauteur_cm * scale, fill=self.themes[self.current_theme]["canvas_line"])
-                    y -= hauteur_cm * scale
+                if giron > 0 and hauteur_cm > 0:
+                    # Ajuster l'échelle pour que l'escalier s'adapte au canvas
+                    scale_x = canvas_width / (nombre_girons * giron) if giron > 0 else 1
+                    scale_y = canvas_height / (nombre_girons * hauteur_cm) if hauteur_cm > 0 else 1
+                    scale = min(scale_x, scale_y) * 0.8  # Réduire un peu pour laisser de la marge
+                    
+                    x = 50  # Point de départ en x (marge)
+                    y = canvas_height - 50  # Point de départ en y (bas du canvas)
+                    
+                    # Dessiner chaque marche
+                    for i in range(nombre_girons):
+                        # Dessiner le giron (ligne horizontale)
+                        self.canvas.create_line(x, y, x + giron * scale, y, 
+                                              fill=self.themes[self.current_theme]["canvas_line"], width=2)
+                        x += giron * scale
+                        # Dessiner la contremarche (ligne verticale)
+                        self.canvas.create_line(x, y, x, y - hauteur_cm * scale, 
+                                              fill=self.themes[self.current_theme]["canvas_line"], width=2)
+                        y -= hauteur_cm * scale
+                    
+                    # Ajouter un titre
+                    self.canvas.create_text(canvas_width/2, 30, 
+                                          text=f"Escalier: {nombre_girons} marches", 
+                                          fill=self.themes[self.current_theme]["canvas_line"], 
+                                          font=("Arial", 12, "bold"))
+    
 
 # --- DÉBUT DU BLOC DE DÉMARRAGE DE L'APPLICATION ---
 # C'est ce bloc qui permet à l'application Tkinter de se lancer
