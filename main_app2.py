@@ -735,37 +735,12 @@ class ModernStairCalculator(tk.Tk):
                 changed_var_name=changed_var_name
             )
 
-            # --- AJOUT DEBUG ---
-            print("DEBUG calc_output:", calc_output)
-            # Si le résultat est vide ou incomplet, on force un résultat de test pour vérifier l'affichage
-            if not calc_output or "results" not in calc_output or not calc_output["results"].get("giron_utilise"):
-                self.latest_results = {
-                    "hauteur_totale_escalier": 100,
-                    "giron_utilise": 10,
-                    "nombre_girons": 9,
-                    "hauteur_reelle_contremarche": 11.11,
-                    "longueur_calculee_escalier": 90,
-                    "angle_escalier": 35,
-                    "longueur_limon_approximative": 92,
-                    "min_echappee_calculee": 200,
-                    "blondel_message": "OK",
-                    "blondel_value": 30,
-                    "hauteur_cm_message": "OK",
-                    "giron_message": "OK",
-                    "echappee_message": "OK",
-                    "longueur_disponible_message": "",
-                    "angle_message": "",
-                    "hauteur_totale_ecart_message": ""
-                }
-                global_warnings = []
-                global_is_conform = True
-            else:
-                self.latest_results = calc_output["results"]
-                global_warnings = calc_output["warnings"]
-                global_is_conform = calc_output["is_conform"]
-            # --- FIN AJOUT DEBUG ---
+            self.latest_results = calc_output["results"]
+            global_warnings = calc_output["warnings"]
+            global_is_conform = calc_output["is_conform"]
 
             # Mise à jour des champs interactifs avec les valeurs ajustées par la logique de calcul
+            # Cela assure la cohérence visuelle dans la boite 1/2 fusionnée
             if self.latest_results.get("hauteur_reelle_contremarche") is not None:
                 self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(self.latest_results["hauteur_reelle_contremarche"], self.app_preferences))
             if self.latest_results.get("giron_utilise") is not None:
@@ -775,8 +750,10 @@ class ModernStairCalculator(tk.Tk):
             if self.latest_results.get("nombre_girons") is not None:
                 self.nombre_marches_manuel_var.set(str(self.latest_results["nombre_girons"]))
 
+            # Mettre à jour l'affichage des résultats et des messages
             self.update_results_display()
-            self.update_warnings_display(global_warnings, global_is_conform)
+            self.update_warnings_display(global_warnings, global_is_conform) # Passer les warnings et conformité
+
             self.update_visual_preview()
             self.update_reports()
 
@@ -786,7 +763,7 @@ class ModernStairCalculator(tk.Tk):
             self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
             self.clear_results_display()
             if constants.DEBUG_MODE_ACTIVE:
-                raise
+                raise # Rélève l'exception complète en mode débogage pour un diagnostic précis
         finally:
             self._is_updating_ui = False
 
