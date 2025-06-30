@@ -1,3 +1,5 @@
+# Fichier: main_app.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import math
@@ -479,7 +481,8 @@ class ModernStairCalculator(tk.Tk):
             "LIMITE": ("Indicator.Yellow.TLabel", "⚠️ LIMITE"),
             "Confort Limité": ("Indicator.Yellow.TLabel", "⚠️ CONFORT LIMITÉ"),
             "OK": ("Indicator.Green.TLabel", "✅ OK"),
-            "OPTIMAL": ("Indicator.Green.TLabel", "✅ OPTIMAL")
+            "OPTIMAL": ("Indicator.Green.TLabel", "✅ OPTIMAL"),
+            "Nul": ("TLabel", "✅ Nul") # Pour l'écart de hauteur totale, "Nul" est positif.
         }
         
         style = "TLabel" # Style par défaut
@@ -555,7 +558,7 @@ class ModernStairCalculator(tk.Tk):
                     current_val = round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE)
                 else:
                     current_val = 2 # Minimum logique si hauteur totale est 0 ou non valide
-                current_val = self.latest_results.get("nombre_contremarches", current_val) # Fallback avec latest_results si dispo
+                current_val = self.latest_results.get("nombre_contremarches", current_val) if self.latest_results else current_val # Fallback avec latest_results si dispo
 
             if current_val > 2: # Minimum 2 CM
                 self.nombre_cm_manuel_var.set(str(current_val - 1))
@@ -567,7 +570,7 @@ class ModernStairCalculator(tk.Tk):
                 fallback_val = round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE)
             else:
                 fallback_val = 2
-            self.nombre_cm_manuel_var.set(str(max(2, self.latest_results.get("nombre_contremarches", fallback_val) - 1)))
+            self.nombre_cm_manuel_var.set(str(max(2, (self.latest_results.get("nombre_contremarches", fallback_val) - 1) if self.latest_results else fallback_val - 1 )))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans decrement_cm: {e}")
             pass
@@ -584,7 +587,7 @@ class ModernStairCalculator(tk.Tk):
                     current_val = round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE)
                 else:
                     current_val = 2 # Sera ajusté à 2 min
-                current_val = self.latest_results.get("nombre_contremarches", current_val) # Fallback avec latest_results si dispo
+                current_val = self.latest_results.get("nombre_contremarches", current_val) if self.latest_results else current_val # Fallback avec latest_results si dispo
 
             if current_val < 50: # Limite arbitraire
                 self.nombre_cm_manuel_var.set(str(current_val + 1))
@@ -596,7 +599,7 @@ class ModernStairCalculator(tk.Tk):
                 fallback_val = round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE)
             else:
                 fallback_val = 2
-            self.nombre_cm_manuel_var.set(str(min(50, self.latest_results.get("nombre_contremarches", fallback_val) + 1)))
+            self.nombre_cm_manuel_var.set(str(min(50, (self.latest_results.get("nombre_contremarches", fallback_val) + 1) if self.latest_results else fallback_val + 1 )))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_cm: {e}")
             pass
@@ -613,7 +616,7 @@ class ModernStairCalculator(tk.Tk):
                     current_val = (round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE) - 1)
                 else:
                     current_val = 1 # Minimum logique avant d'être ajusté à 1
-                current_val = self.latest_results.get("nombre_girons", current_val) # Fallback avec latest_results si dispo
+                current_val = self.latest_results.get("nombre_girons", current_val) if self.latest_results else current_val # Fallback avec latest_results si dispo
 
 
             if current_val > 1: # Minimum 1 marche
@@ -626,7 +629,7 @@ class ModernStairCalculator(tk.Tk):
                 fallback_val = (round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE) - 1)
             else:
                 fallback_val = 1
-            self.nombre_marches_manuel_var.set(str(max(1, self.latest_results.get("nombre_girons", fallback_val) - 1)))
+            self.nombre_marches_manuel_var.set(str(max(1, (self.latest_results.get("nombre_girons", fallback_val) - 1) if self.latest_results else fallback_val - 1 )))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans decrement_marches: {e}")
             pass
@@ -643,7 +646,7 @@ class ModernStairCalculator(tk.Tk):
                     current_val = (round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE) - 1)
                 else:
                     current_val = 1 # Sera ajusté
-                current_val = self.latest_results.get("nombre_girons", current_val) # Fallback avec latest_results si dispo
+                current_val = self.latest_results.get("nombre_girons", current_val) if self.latest_results else current_val # Fallback avec latest_results si dispo
 
             if current_val < 49: # Limite arbitraire (50 CM = 49 Marches)
                 self.nombre_marches_manuel_var.set(str(current_val + 1))
@@ -655,7 +658,7 @@ class ModernStairCalculator(tk.Tk):
                 fallback_val = (round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE) - 1)
             else:
                 fallback_val = 1
-            self.nombre_marches_manuel_var.set(str(min(49, self.latest_results.get("nombre_girons", fallback_val) + 1)))
+            self.nombre_marches_manuel_var.set(str(min(49, (self.latest_results.get("nombre_girons", fallback_val) + 1) if self.latest_results else fallback_val + 1 )))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_marches: {e}")
             pass
@@ -691,7 +694,7 @@ class ModernStairCalculator(tk.Tk):
             new_val = max(constants.GIRON_MIN_REGLEMENTAIRE, current_val - 0.125)
             self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
         except ValueError:
-            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD - 0.125, self.app_preferences))
+            self.giron_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD - 0.125, self.app_preferences))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_giron: {e}")
             pass
@@ -703,11 +706,35 @@ class ModernStairCalculator(tk.Tk):
             new_val = min(constants.GIRON_MAX_REGLEMENTAIRE, current_val + 0.125)
             self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
         except ValueError:
-            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD + 0.125, self.app_preferences))
+            self.giron_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD + 0.125, self.app_preferences))
         except Exception as e:
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_giron: {e}")
             pass
-    
+
+    def apply_ideal_values(self):
+        """Applique des valeurs idéales prédéfinies pour le confort."""
+        # REF-010: Utiliser les valeurs par défaut des préférences pour le giron
+        default_tread_width_straight = self.app_preferences.get("default_tread_width_straight", "9 1/4").replace('"', '')
+        self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(
+            formatting.parser_fraction(default_tread_width_straight), self.app_preferences))
+        
+        # REF-011: Utiliser la constante HAUTEUR_CM_CONFORT_CIBLE pour la hauteur de contremarche
+        self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(
+            constants.HAUTEUR_CM_CONFORT_CIBLE, self.app_preferences))
+
+        # Recalculer le nombre de CM en fonction de la hauteur totale et de la HCM de confort
+        h_tot_val = formatting.parser_fraction(self.hauteur_totale_var.get() or "0")
+        if h_tot_val > 0:
+            nombre_cm_ideal = round(h_tot_val / constants.HAUTEUR_CM_CONFORT_CIBLE)
+            if nombre_cm_ideal < 2: # S'assurer d'au moins 2 contremarches
+                nombre_cm_ideal = 2
+            self.nombre_cm_manuel_var.set(str(nombre_cm_ideal))
+            # Mettre à jour le nombre de marches en conséquence
+            self.nombre_marches_manuel_var.set(str(nombre_cm_ideal - 1))
+        
+        messagebox.showinfo("Valeurs Idéales", "Les valeurs de giron et de hauteur de contremarche de confort ont été appliquées.", parent=self)
+
+
     def recalculate_and_update_ui(self, *args, changed_var_name=None):
         """
         Recalcule les dimensions de l'escalier et met à jour l'interface.
@@ -735,37 +762,12 @@ class ModernStairCalculator(tk.Tk):
                 changed_var_name=changed_var_name
             )
 
-            # --- AJOUT DEBUG ---
-            print("DEBUG calc_output:", calc_output)
-            # Si le résultat est vide ou incomplet, on force un résultat de test pour vérifier l'affichage
-            if not calc_output or "results" not in calc_output or not calc_output["results"].get("giron_utilise"):
-                self.latest_results = {
-                    "hauteur_totale_escalier": 100,
-                    "giron_utilise": 10,
-                    "nombre_girons": 9,
-                    "hauteur_reelle_contremarche": 11.11,
-                    "longueur_calculee_escalier": 90,
-                    "angle_escalier": 35,
-                    "longueur_limon_approximative": 92,
-                    "min_echappee_calculee": 200,
-                    "blondel_message": "OK",
-                    "blondel_value": 30,
-                    "hauteur_cm_message": "OK",
-                    "giron_message": "OK",
-                    "echappee_message": "OK",
-                    "longueur_disponible_message": "",
-                    "angle_message": "",
-                    "hauteur_totale_ecart_message": ""
-                }
-                global_warnings = []
-                global_is_conform = True
-            else:
-                self.latest_results = calc_output["results"]
-                global_warnings = calc_output["warnings"]
-                global_is_conform = calc_output["is_conform"]
-            # --- FIN AJOUT DEBUG ---
+            self.latest_results = calc_output["results"]
+            global_warnings = calc_output["warnings"]
+            global_is_conform = calc_output["is_conform"]
 
             # Mise à jour des champs interactifs avec les valeurs ajustées par la logique de calcul
+            # Cela assure la cohérence visuelle dans la boite 1/2 fusionnée
             if self.latest_results.get("hauteur_reelle_contremarche") is not None:
                 self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(self.latest_results["hauteur_reelle_contremarche"], self.app_preferences))
             if self.latest_results.get("giron_utilise") is not None:
@@ -775,8 +777,10 @@ class ModernStairCalculator(tk.Tk):
             if self.latest_results.get("nombre_girons") is not None:
                 self.nombre_marches_manuel_var.set(str(self.latest_results["nombre_girons"]))
 
+            # Mettre à jour l'affichage des résultats et des messages
             self.update_results_display()
-            self.update_warnings_display(global_warnings, global_is_conform)
+            self.update_warnings_display(global_warnings, global_is_conform) # Passer les warnings et conformité
+
             self.update_visual_preview()
             self.update_reports()
 
@@ -786,7 +790,7 @@ class ModernStairCalculator(tk.Tk):
             self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
             self.clear_results_display()
             if constants.DEBUG_MODE_ACTIVE:
-                raise
+                raise # Rélève l'exception complète en mode débogage pour un diagnostic précis
         finally:
             self._is_updating_ui = False
 
@@ -801,7 +805,7 @@ class ModernStairCalculator(tk.Tk):
         # Correction : n'affiche rien si latest_results est vide ou incomplet
         if not res or not res.get("hauteur_totale_escalier") or not res.get("giron_utilise"):
             self.hauteur_reelle_cm_res_var.set("")
-            self.giron_utilise_res_var.set("")
+            self.giron_utilise_res_var.set("")  # <-- Effacer la variable résultat du giron
             self.longueur_totale_res_var.set("")
             self.angle_res_var.set("")
             self.limon_res_var.set("")
@@ -926,7 +930,49 @@ class ModernStairCalculator(tk.Tk):
                                           text=f"Escalier: {nombre_girons} marches", 
                                           fill=self.themes[self.current_theme]["canvas_line"], 
                                           font=("Arial", 12, "bold"))
-    
+
+    def open_preferences_dialog(self):
+        """Ouvre la boîte de dialogue des préférences."""
+        prefs_dialog = PreferencesDialog(self, self.app_preferences) # Passer self.app_preferences
+        self.wait_window(prefs_dialog)
+        # Recharger les préférences après la fermeture de la boîte de dialogue si elles ont été modifiées
+        self.app_preferences = file_operations.load_application_preferences()
+        # Forcer un recalcul pour appliquer les nouvelles préférences immédiatement
+        self.recalculate_and_update_ui()
+        
+    def open_laser_dialog(self):
+        """Ouvre la boîte de dialogue d'assistance laser."""
+        laser_dialog = LaserDialog(self)
+        self.wait_window(laser_dialog)
+
+    def export_pdf_report(self):
+        """Exporte le rapport de calcul en PDF."""
+        # Ceci est une fonctionnalité future, le PDF nécessite des bibliothèques tierces
+        messagebox.showinfo("Export PDF", "La fonction d'exportation PDF est en développement. Veuillez utiliser l'onglet 'Plan de Traçage' et 'Tableau des Marches' pour l'instant.", parent=self)
+
+    def update_reports(self):
+        """Met à jour les onglets de rapport (plan de traçage et tableaux)."""
+        if self.latest_results:
+            plan_tracage_text = reporting.generer_texte_trace(self.latest_results, self.app_preferences)
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, plan_tracage_text)
+
+            tableau_marches_text = reporting.generer_tableau_marches(self.latest_results, self.app_preferences)
+            self.table_text.delete("1.0", tk.END)
+            self.table_text.insert(tk.END, tableau_marches_text)
+            
+            tableau_params_text = reporting.generer_tableau_parametres(self.latest_results, self.app_preferences)
+            # Ajouter le tableau des paramètres avant le tableau des marches pour une meilleure organisation
+            full_table_content = f"{tableau_params_text}\n\n{tableau_marches_text}"
+            self.table_text.delete("1.0", tk.END)
+            self.table_text.insert(tk.END, full_table_content)
+
+        else:
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, "Aucun résultat de calcul disponible.")
+            self.table_text.delete("1.0", tk.END)
+            self.table_text.insert(tk.END, "Aucun résultat de calcul disponible.")
+
 
 # --- DÉBUT DU BLOC DE DÉMARRAGE DE L'APPLICATION ---
 # C'est ce bloc qui permet à l'application Tkinter de se lancer
