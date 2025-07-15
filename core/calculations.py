@@ -95,30 +95,30 @@ def calculer_escalier_ajuste(
 
     # --- 2. Détermination du nombre de contremarches et hauteur réelle ---
     nombre_contremarches = 0
-    hauteur_reelle_contremarche = 0.0
+    hauteur_reelle_contremarche = 0.0 # Initialisation
 
-    if changed_var_name == "nombre_cm_manuel_var" and nombre_cm_manuel is not None:
-        # Priorité au nombre de contremarches saisi manuellement
+    # Priorité 1: Nombre de CM ou de marches manuel
+    if nombre_cm_manuel is not None:
         nombre_contremarches = nombre_cm_manuel
-    elif changed_var_name == "nombre_marches_manuel_var" and nombre_marches_manuel is not None:
-        # Priorité au nombre de marches saisi manuellement
+    elif nombre_marches_manuel is not None:
         nombre_contremarches = nombre_marches_manuel + 1
     else:
-        # Calcul initial basé sur la hauteur de CM souhaitée
-        if hauteur_cm_souhaitee <= 0: # Fallback si HCM souhaitée est invalide ou 0
+        # Priorité 2: Calcul du nombre de CM optimal basé sur la hauteur de CM souhaitée
+        if hauteur_cm_souhaitee <= 0: # Fallback si HCM souhaitée est invalide ou 0.
             hauteur_cm_souhaitee = constants.HAUTEUR_CM_CONFORT_CIBLE
-        
+            
         # Calculer le nombre de CM en arrondissant au plus proche entier
         nombre_contremarches = round(hauteur_totale_escalier / hauteur_cm_souhaitee)
-        
-        # Assurer un minimum de 2 contremarches pour un escalier
-        if nombre_contremarches < 2:
-            nombre_contremarches = 2
+            
+    # Assurer un minimum de 2 contremarches pour un escalier, quel que soit le mode de détermination
+    if nombre_contremarches < 2:
+        nombre_contremarches = 2
 
-    # Calcul de la hauteur réelle de contremarche après détermination du nombre de CM
+    # Calcul universel de la hauteur réelle de contremarche après détermination de nombre_contremarches
     if nombre_contremarches > 0:
         hauteur_reelle_contremarche = hauteur_totale_escalier / nombre_contremarches
     else:
+        # Ce cas ne devrait pas arriver souvent avec le min de 2 CM, mais c'est une sécurité
         warnings.append("Impossible de déterminer un nombre valide de contremarches.")
         is_conform = False
         return {"results": results, "warnings": warnings, "is_conform": is_conform}
@@ -142,16 +142,12 @@ def calculer_escalier_ajuste(
     # --- 4. Calcul du nombre de girons et ajustements si nécessaire ---
     nombre_girons = nombre_contremarches - 1
     
-    # Si le nombre de marches manuel a été forcé, cela a déjà déterminé le nombre de CM,
-    # donc le nombre de girons est implicite.
-    # Dans la logique actuelle, le giron est une entrée souhaitée, pas calculée à partir du nombre de marches.
-    # On utilise donc le giron souhaité comme "giron_utilise".
-
-    giron_utilise = giron_souhaite # Par défaut, on utilise le giron souhaité
+    # On utilise le giron souhaité comme "giron_utilise"
+    giron_utilise = giron_souhaite 
 
     # --- 5. Vérification de conformité du Giron ---
     g_min = constants.GIRON_MIN_REGLEMENTAIRE
-    g_max = constants.GIRON_MAX_REGLEMENTAIRE # Giron max est plus une recommandation
+    g_max = constants.GIRON_MAX_REGLEMENTAIRE 
     g_confort_min = constants.GIRON_CONFORT_MIN_RES_STANDARD
 
     if not (g_min <= giron_utilise <= g_max):
@@ -168,8 +164,12 @@ def calculer_escalier_ajuste(
     longueur_calculee_escalier = nombre_girons * giron_utilise
     
     angle_escalier = 0.0
-    if longueur_calculee_escalier > 0:
+    # Correction de l'angle : s'assurer que longueur_calculee_escalier n'est pas zéro pour éviter ZeroDivisionError
+    # et que la hauteur n'est pas zéro non plus pour éviter un angle de 0 sans raison.
+    if longueur_calculee_escalier > 0 and hauteur_totale_escalier > 0:
         angle_escalier = math.degrees(math.atan(hauteur_totale_escalier / longueur_calculee_escalier))
+    elif hauteur_totale_escalier > 0 and longueur_calculee_escalier == 0:
+        angle_escalier = 90.0 # Escalier vertical (cas limite ou erreur)
     
     longueur_limon_approximative = math.sqrt(hauteur_totale_escalier**2 + longueur_calculee_escalier**2)
 
@@ -189,225 +189,87 @@ def calculer_escalier_ajuste(
     min_echappee_calculee = None
     echappee_min_reg = constants.HAUTEUR_LIBRE_MIN_REGLEMENTAIRE
     
+    # Vérifier si les données de trémie sont renseignées pour tenter le calcul
     if profondeur_tremie_ouverture > 0 and position_tremie_ouverture >= 0 and giron_utilise > 0 and hauteur_reelle_contremarche > 0:
-        # Calculer la hauteur sous le plafond pour la première marche du haut
-        # On assume que le haut de l'escalier (dernier giron) est au niveau du plancher supérieur.
-        # La hauteur du plafond est la hauteur totale moins l'épaisseur du plancher supérieur.
-        hauteur_sous_plafond = hauteur_totale_escalier - epaisseur_plancher_sup
-
-        # Déterminer quelle contremarche est la plus critique sous la trémie
-        # La marche critique est celle dont le nez de marche est le plus proche du début de la trémie,
-        # mais aussi la plus haute.
-        # Le nombre de contremarches *passées* avant la trémie
-        # Le "- 1e-9" est pour gérer les flottants et s'assurer que si la position est exactement
-        # sur un giron, on considère la marche *après* ce giron comme la critique pour l'échappée.
-        marche_critique_idx = math.floor(position_tremie_ouverture / giron_utilise - 1e-9) + 1 # Index de la contremarche (1-based)
-
-        # La hauteur de la contremarche critique (distance verticale du sol au nez de marche)
-        hauteur_nez_marche_critique = hauteur_reelle_contremarche * marche_critique_idx
-
-        # La hauteur de l'obstacle (le dessous du plancher supérieur)
-        # L'échappée est la distance entre le nez de la marche critique et le dessous du plancher supérieur.
-        # Le dessous du plancher supérieur est à (hauteur_totale_escalier - epaisseur_plancher_sup) du sol.
-        # Donc, Echappée = (hauteur_totale_escalier - epaisseur_plancher_sup) - hauteur_nez_marche_critique
-        # ATTENTION: Il faut s'assurer que l'on considère la "distance du sol" ou "hauteur relative"
-        # Simplifié: Si le nez de marche critique est à X de hauteur, et le plafond est à Y de hauteur,
-        # l'échappée est Y-X.
-        # L'échappée est la hauteur entre le dessus du nez de marche et le dessous de l'obstacle.
-        # L'obstacle est à (position_tremie_ouverture + profondeur_tremie_ouverture) du début de l'escalier,
-        # MAIS sa hauteur est à Hauteur Totale.
         
-        # Le calcul de l'échappée est délicat. Voici une approche standard :
-        # L'échappée est la distance verticale entre un point sur la ligne de pente et un point verticalement au-dessus.
-        # On cherche le point le plus bas du plafond au-dessus du nez de marche.
-        
-        # Le point le plus bas du plafond est à `position_tremie_ouverture` en X et `hauteur_totale_escalier` en Y
-        # Le point le plus haut du plafond est à `position_tremie_ouverture + profondeur_tremie_ouverture` en X et `hauteur_totale_escalier` en Y
-        
-        # On doit vérifier pour chaque marche sous la trémie.
-        # L'échappée est la distance verticale entre le nez de marche (x, y) et le point le plus bas du linteau de la trémie (x, Y_linteau).
-        # Le linteau est à la hauteur totale (plancher haut).
-        
-        # La marche dont le nez se trouve le plus en avant sous la trémie donne la contremarche critique
-        # pour l'échappée si la trémie est au début de l'escalier.
-        # Si la trémie est loin dans l'escalier, la hauteur libre se calcule par rapport au point bas de la trémie.
-        # On considère que le point le plus restrictif est le début de la trémie.
-        
-        # Pour simplifier et être robuste: on prend la hauteur du dessus de la marche la plus avancée sous l'ouverture
-        # et on la soustrait de la hauteur du plancher supérieur (soit hauteur_totale_escalier).
-        # La hauteur de la marche la plus avancée dans l'ouverture est:
-        # hauteur_nez_marche = (floor(position_tremie_ouverture / giron_utilise) + 1) * hauteur_reelle_contremarche
-        
-        # Une autre interprétation, plus courante:
-        # L'échappée est la distance verticale entre un point sur la ligne de pente et le point le plus bas de l'obstacle (le bas de la trémie).
-        # Le bas de la trémie est à (Hauteur Totale - Épaisseur Plancher Supérieur) du sol.
-        # Le point critique pour l'échappée est le nez de la marche qui est "sous" le début de la trémie.
-        
-        # Hauteur du dessous de la trémie par rapport au sol:
+        # Calcul de la hauteur du dessous de la trémie par rapport au niveau du sol de l'étage inférieur
+        # C'est la hauteur totale moins l'épaisseur du plancher supérieur (au niveau du 2e étage)
         h_dessous_tremie = hauteur_totale_escalier - epaisseur_plancher_sup
 
-        # Giron de la contremarche située juste après le début de la trémie (si le début de la trémie n'est pas pile entre deux girons)
-        # C'est la contremarche dont le nez est le plus proche de la position_tremie_ouverture, ou juste après.
-        
-        # Calcule l'indice (0-basé) de la marche la plus élevée qui est potentiellement sous la trémie
-        # Si position_tremie_ouverture est 0, on considère la première marche (index 0)
-        # Si position_tremie_ouverture est 10, giron 10, alors c'est la marche 1 (index 1)
-        # C'est la (N+1)-ième contremarche qui est au-dessus du N-ième giron.
-        
-        # Exemple: position_tremie_ouverture = 20", giron = 10"
-        # Premier giron à 10", deuxième giron à 20"
-        # La marche la plus critique est celle dont le giron est à 20".
-        
-        # Nombre de girons avant le début de la trémie
-        nb_girons_avant_tremie = math.ceil(position_tremie_ouverture / giron_utilise)
-        
-        # Si la trémie commence avant le premier giron (position_tremie_ouverture = 0 ou très petit)
-        # Alors l'échappée est simplement la hauteur sous plafond.
-        if nb_girons_avant_tremie == 0:
-            min_echappee_calculee = h_dessous_tremie
-        else:
-            # Hauteur du nez de marche juste avant (ou au début de) la trémie
-            hauteur_nez_marche_a_debut_tremie = nb_girons_avant_tremie * hauteur_reelle_contremarche
-            
-            # Distance horizontale depuis le début de l'escalier jusqu'au nez de cette marche
-            distance_horiz_nez_marche = nb_girons_avant_tremie * giron_utilise
+        # La pente de l'escalier (Hauteur / Giron)
+        pente_escalier = hauteur_reelle_contremarche / giron_utilise
 
-            # Calcul de l'échappée verticale au point de la trémie
-            # La hauteur du point le plus bas du linteau au-dessus du niveau du sol est h_dessous_tremie.
-            # L'échappée est la hauteur du linteau moins la hauteur de la "ligne de marche" à cet endroit.
-            
-            # On considère le point du bas de la trémie qui est le plus éloigné horizontalement du début de l'escalier.
-            # Soit le point (X_tremie_fin, Y_tremie_bas) où Y_tremie_bas est h_dessous_tremie
-            # et X_tremie_fin est position_tremie_ouverture + profondeur_tremie_ouverture.
-            # On cherche le point sur le nez de marche le plus haut sous ce X_tremie_fin.
-            
-            # Revoir la formule de l'échappée selon APCHQ:
-            # La hauteur libre minimale (échappée) est mesurée verticalement depuis le nez de chaque marche
-            # jusqu'au point le plus bas de l'obstacle au-dessus.
-            # Le point le plus bas de l'obstacle est le dessous du plancher supérieur.
-            # On doit projeter le point du nez de marche sur la verticale qui passe par le début de la trémie.
-            # C'est une vérification pour chaque marche sous l'ouverture.
-            
-            # Simplification: l'échappée critique se trouve souvent au nez de marche directement sous l'arête d'ouverture.
-            # Donc, distance verticale entre le nez de marche (à X) et le plafond (à X).
-            
-            # Position horizontale de chaque nez de marche (pour les girons)
-            girons_x_coords = [i * giron_utilise for i in range(1, nombre_girons + 1)] # Girons 1 à N
-            
-            min_echappee_calculee = float('inf') # Initialiser à l'infini
-            
-            for i in range(1, nombre_contremarches + 1): # Pour chaque contremarche (et son nez de marche associé)
-                hauteur_nez_actuel = i * hauteur_reelle_contremarche
+        # Pour calculer l'échappée, on doit considérer la hauteur verticale entre la ligne
+        # de nez de marche et le dessous de l'obstacle (la trémie) au-dessus.
+        # Le point le plus critique est généralement au début de la trémie.
+
+        # Hauteur de la ligne de nez de marche au début de la trémie (position_tremie_ouverture)
+        # y = pente * x
+        hauteur_nez_a_debut_tremie = pente_escalier * position_tremie_ouverture
+        
+        # Calcul de l'échappée verticale à la position_tremie_ouverture
+        current_echappee = h_dessous_tremie - hauteur_nez_a_debut_tremie
+        
+        # Il faut aussi considérer la situation où la trémie couvre plusieurs marches.
+        # La hauteur libre minimale est la plus petite distance verticale entre le nez de marche
+        # et le dessous de l'obstacle.
+        
+        min_echappee_calculee = float('inf') # Initialiser avec une valeur très grande
+        
+        # Itérer sur les girons qui se trouvent sous la trémie pour trouver l'échappée minimale
+        # La trémie va de position_tremie_ouverture à (position_tremie_ouverture + profondeur_tremie_ouverture)
+        
+        # Déterminer les indices des girons (marches) qui se trouvent sous l'ouverture de la trémie
+        # Un giron est à X_i = i * giron_utilise. Le nez de marche est à (i*giron, (i+1)*HCM).
+        # On doit vérifier pour chaque marche dont le nez est sous l'ouverture de la trémie.
+        
+        # L'approche la plus simple et réglementaire est de mesurer à partir du nez de chaque marche.
+        # On va vérifier les marches dont le nez est APRÈS le début de la trémie
+        # et AVANT la fin de la trémie.
+        
+        # On itère de la première contremarche (i=1) à la dernière (nombre_contremarches)
+        for i in range(1, nombre_contremarches + 1):
+            # Coordonnée horizontale (X) du nez de la marche 'i' (qui correspond à la fin du (i-1)ième giron)
+            x_nez_marche = (i - 1) * giron_utilise
+            # Coordonnée verticale (Y) du nez de la marche 'i' (hauteur de la contremarche 'i')
+            y_nez_marche = i * hauteur_reelle_contremarche
+
+            # Vérifier si ce nez de marche se trouve sous l'ouverture de la trémie
+            # Un nez de marche est "sous" la trémie si son X est entre le début et la fin de l'ouverture
+            if x_nez_marche >= position_tremie_ouverture and x_nez_marche <= (position_tremie_ouverture + profondeur_tremie_ouverture):
                 
-                # La coordonnée X du nez de marche est celle du giron précédent si on compte les girons depuis 1
-                x_coord_nez_marche = (i-1) * giron_utilise
+                # La hauteur du point le plus bas de l'obstacle au-dessus de ce nez de marche.
+                # Ce point est à la hauteur totale de l'escalier (plafond) moins l'épaisseur du plancher supérieur.
+                # MAIS seulement si la position horizontale est dans l'ouverture.
                 
-                # On ne vérifie l'échappée que pour les marches sous la trémie
-                if x_coord_nez_marche >= position_tremie_ouverture and x_coord_nez_marche < (position_tremie_ouverture + profondeur_tremie_ouverture):
-                    # La hauteur du plafond à ce point horizontal est la hauteur totale.
-                    # L'échappée est Hauteur Totale (du sol au plafond) - Hauteur du nez de marche actuel.
-                    echappee_pour_cette_marche = hauteur_totale_escalier - hauteur_nez_marche_actuel # Simplifié
-                    
-                    # Un calcul plus précis de l'échappée, comme le ferait un menuisier:
-                    # L'échappée est la distance perpendiculaire entre la ligne des nez de marches et le point le plus bas de la trémie.
-                    # Ou, plus simplement, la hauteur verticale entre le nez de marche et le point le plus bas de l'ouverture.
-                    # Pour un escalier droit, l'échappée est la hauteur entre le "plan du giron" et le "plan du plafond".
-                    
-                    # Hauteur du point le plus bas de la trémie (verticalement au-dessus de la marche concernée)
-                    # La hauteur libre est HLM. La profondeur trémie est L.
-                    # Le nez de marche est à (Giron_prec, H_prec). Le point sous plafond est à (X_tremie, H_totale).
-                    
-                    # Méthode "Triangle Similaire" ou "Pente":
-                    # Considérons que la trémie commence à X_start_tremie et se termine à X_end_tremie
-                    # La hauteur du dessous du plancher est Y_plafond = HauteurTotale - EpaisseurPlancherSup
-                    # La pente de l'escalier est p = hauteur_reelle_contremarche / giron_utilise
-                    # La ligne des nez de marche commence à (0, hauteur_reelle_contremarche) et va jusqu'à (longueur_calculee_escalier, hauteur_totale_escalier)
-                    
-                    # La hauteur du nez de la `marche_idx`-ième marche est `marche_idx * hauteur_reelle_contremarche`.
-                    # Sa position horizontale est `(marche_idx - 1) * giron_utilise`.
-                    
-                    # Le point le plus restrictif est le nez de la marche dont la projection verticale touche le début de la trémie.
-                    # Ou, si le code est interprété comme "hauteur libre au-dessus de chaque nez de marche":
-                    # Il faut trouver la marche (i) telle que (i-1)*giron < position_tremie ET i*giron > position_tremie
-                    # Non, c'est plus simple: la hauteur libre est la distance verticale entre le nez de chaque marche
-                    # et l'obstacle. L'obstacle est le dessous du plancher.
-                    
-                    # Position du nez de la marche qui est à l'extrémité de la trémie (du côté haut de l'escalier)
-                    # C'est la marche la plus avancée dans la trémie, qui définit l'échappée.
-                    # Le point le plus bas du linteau est à (position_tremie_ouverture, hauteur_totale_escalier - epaisseur_plancher_sup).
-                    # Le nez de marche "sous" ce point serait le (N+1)ème nez de marche si N*giron < position_tremie.
-                    
-                    # Échappée = Hauteur du point le plus bas du linteau (Y) - Hauteur de la marche (Y_marche_proj) à la même position X.
-                    # Y_marche_proj est une interpolation le long de la ligne de pente.
-                    # Y_marche_proj = (X_point_sur_marche / longueur_calculee_escalier) * hauteur_totale_escalier
-                    
-                    # Le calcul d'échappée est crucial et souvent mal interprété.
-                    # La hauteur libre est la hauteur perpendiculaire entre la ligne des nez de marche et le bord inférieur de la trémie.
-                    # Pour simplifier dans l'application, on calcule la hauteur verticale au point critique.
-                    
-                    # Re-définition simple de l'échappée pour un escalier droit:
-                    # Point le plus bas de la structure de l'étage supérieur = épaisseur du plancher supérieur (mesuré depuis le niveau du sol de l'étage supérieur).
-                    # Donc, la hauteur du dessous de la trémie par rapport au plancher inférieur est :
-                    # Hauteur Plancher Supérieur (depuis le sol du bas) - Epaisseur Plancher Supérieur.
-                    # Soit H_obstacle = Hauteur_Totale_Escalier - Epaisseur_Plancher_Supérieur
-                    
-                    # La distance horizontale du début de l'escalier au point où l'échappée est la plus critique est généralement le début de la trémie.
-                    # Calculons la hauteur de la ligne d'emmarchement (nez de marche) à cette position horizontale.
-                    
-                    if giron_utilise > 0 and hauteur_reelle_contremarche > 0:
-                        pente_escalier = hauteur_reelle_contremarche / giron_utilise
-                        
-                        # Hauteur du point sur la ligne de nez de marche directement sous le début de la trémie
-                        hauteur_nez_sous_tremie = pente_escalier * position_tremie_ouverture
-                        
-                        # L'échappée est la hauteur de la trémie (depuis le sol) moins la hauteur du nez de marche à ce même X.
-                        current_echappee = h_dessous_tremie - hauteur_nez_sous_tremie
-                        
-                        # La trémie a une certaine profondeur. Il faut aussi vérifier si le bout de l'escalier ne touche pas la fin de la trémie.
-                        # Mais le point le plus bas de l'obstacle est toujours celui au début de la trémie.
-                        
-                        # On considère l'échappée comme la hauteur verticale entre le nez de chaque marche
-                        # et le point le plus bas de l'obstacle au-dessus.
-                        # L'obstacle commence à (position_tremie_ouverture) et va jusqu'à (position_tremie_ouverture + profondeur_tremie_ouverture)
-                        # La hauteur de l'obstacle est Hauteur_Totale - Epaisseur_Plancher_Sup.
-                        
-                        # On doit parcourir les marches qui se trouvent *sous* l'ouverture de la trémie.
-                        # La première marche concernée est celle dont le giron est >= position_tremie_ouverture.
-                        # La dernière marche concernée est celle dont le giron est < (position_tremie_ouverture + profondeur_tremie_ouverture).
-                        
-                        start_giron_idx = math.ceil(position_tremie_ouverture / giron_utilise)
-                        end_giron_idx = math.floor((position_tremie_ouverture + profondeur_tremie_ouverture) / giron_utilise)
-                        
-                        for i in range(int(start_giron_idx), int(end_giron_idx) + 1):
-                            if i < 0: continue # Ne pas vérifier les indices négatifs
-                            if i >= nombre_girons: break # Ne pas dépasser le nombre de girons réels
-                            
-                            # X-coordonnée du nez de marche (fin du i-ème giron)
-                            x_nez_marche = i * giron_utilise
-                            # Y-coordonnée du nez de marche (hauteur du dessus du nez de marche)
-                            y_nez_marche = (i + 1) * hauteur_reelle_contremarche
-                            
-                            # La hauteur du plafond à l'horizontale X_nez_marche
-                            y_plafond_at_x = hauteur_totale_escalier # Pour un plafond plat à la hauteur totale
-                            
-                            # L'échappée est la hauteur du plafond moins la hauteur du nez de marche
-                            current_echappee = y_plafond_at_x - y_nez_marche
-                            
-                            if current_echappee < min_echappee_calculee:
-                                min_echappee_calculee = current_echappee
-                    
-                    if min_echappee_calculee == float('inf'): # Si aucune marche n'est sous la trémie, ou données invalides.
-                        min_echappee_calculee = None # Indique qu'aucun calcul valide n'a été fait.
-                        results["echappee_message"] = "Trémie ou espace insuffisant pour le calcul d'échappée."
-                    else:
-                        if min_echappee_calculee < echappee_min_reg:
-                            results["echappee_message"] = "NON CONFORME"
-                            warnings.append(f"Échappée calculée ({decimal_to_fraction_str(min_echappee_calculee, loaded_app_preferences_dict)}\") est inférieure à la norme ({decimal_to_fraction_str(echappee_min_reg, loaded_app_preferences_dict)}\").")
-                            is_conform = False
-                        else:
-                            results["echappee_message"] = "OK"
+                # Le code de construction dit que l'échappée se mesure verticalement au-dessus du nez de marche.
+                # Si le nez de marche est à `x_nez_marche` de l'origine de l'escalier,
+                # et que le plafond est à `hauteur_totale_escalier`
+                # et que la trémie commence à `position_tremie_ouverture`
+                # et qu'elle a une profondeur de `profondeur_tremie_ouverture`.
+                
+                # L'échappée est la hauteur verticale de la surface de marche à l'objet le plus bas au-dessus.
+                # L'objet le plus bas est le bas de la structure de l'étage supérieur.
+                # Le bas de la structure est à `hauteur_totale_escalier - epaisseur_plancher_sup`.
+                
+                # Echappée verticale au nez de cette marche
+                current_echappee_val = (hauteur_totale_escalier - epaisseur_plancher_sup) - y_nez_marche
+                
+                # Si cette valeur est plus petite que la min_echappee_calculee actuelle, la mettre à jour
+                min_echappee_calculee = min(min_echappee_calculee, current_echappee_val)
+
+        # Après avoir vérifié toutes les marches sous la trémie, vérifier la conformité.
+        if min_echappee_calculee == float('inf'): # Aucune marche n'était sous la trémie ou calcul non pertinent
+            results["echappee_message"] = "Trémie hors zone ou données manquantes."
+            min_echappee_calculee = 0.0 # Pour afficher un 0 si non calculé, mais le message l'explique
+        elif min_echappee_calculee < echappee_min_reg:
+            results["echappee_message"] = "NON CONFORME"
+            warnings.append(f"Échappée calculée ({decimal_to_fraction_str(min_echappee_calculee, loaded_app_preferences_dict)}\") est inférieure à la norme ({decimal_to_fraction_str(echappee_min_reg, loaded_app_preferences_dict)}\").")
+            is_conform = False
+        else:
+            results["echappee_message"] = "OK"
     else:
-        results["echappee_message"] = "Données trémie incomplètes"
+        results["echappee_message"] = "Données trémie incomplètes" # Ou non pertinentes si profondeur = 0
 
     # --- 9. Vérification Longueur Disponible ---
     if espace_disponible > 0:
@@ -459,3 +321,45 @@ def calculer_escalier_ajuste(
     results["blondel_value"] = blondel_value
 
     return {"results": results, "warnings": warnings, "is_conform": is_conform}
+
+from core.constants import POUCE_EN_CM, TOLERANCE_MESURE_LASER
+from utils.formatting import parser_fraction
+
+
+def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, preferences):
+    """
+    Calcule la hauteur totale d'escalier à partir de 4 mesures laser + hauteur laser au sol.
+    Retourne un dictionnaire avec la hauteur en pouces, en mètres, et des observations.
+    """
+    try:
+        hls = parser_fraction(hls_str)
+        hg = parser_fraction(hg_str)
+        hd = parser_fraction(hd_str)
+        bg = parser_fraction(bg_str)
+        bd = parser_fraction(bd_str)
+
+        haut = (hg + hd) / 2
+        bas = (bg + bd) / 2
+
+        hauteur_totale_pouces = haut - bas + hls
+        hauteur_metres = hauteur_totale_pouces * POUCE_EN_CM / 100
+
+        observations = []
+        if abs(hg - hd) > TOLERANCE_MESURE_LASER:
+            observations.append("Différence significative entre HG et HD. Vérifiez le niveau supérieur.")
+        if abs(bg - bd) > TOLERANCE_MESURE_LASER:
+            observations.append("Différence significative entre BG et BD. Vérifiez le niveau inférieur.")
+
+        return {
+            "hauteur_totale_calculee_pouces": hauteur_totale_pouces,
+            "hauteur_totale_calculee_metres": hauteur_metres,
+            "observations": observations
+        }
+
+    except Exception as e:
+        return {
+            "erreur": f"Erreur dans le calcul laser : {str(e)}",
+            "hauteur_totale_calculee_pouces": 0.0,
+            "hauteur_totale_calculee_metres": 0.0,
+            "observations": []
+        }
