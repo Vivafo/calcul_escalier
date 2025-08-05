@@ -31,6 +31,8 @@ class ModernStairCalculator(tk.Tk):
         super().__init__()
         self.style = ttk.Style(self)
         self.style.theme_use("clam")  # ou "default", "alt", etc.
+        
+        self.after(200, self._finalize_startup)
 
         # --- Configuration de la fenêtre principale ---
         self.title(f"Calculateur d'Escalier Pro v{constants.VERSION_PROGRAMME}")
@@ -38,8 +40,8 @@ class ModernStairCalculator(tk.Tk):
         self.minsize(900, 700)
 
         # --- Chargement et gestion des préférences ---
-        constants.loaded_app_preferences = file_operations.load_application_preferences()
-        self.app_preferences = constants.loaded_app_preferences
+        # Charger les préférences AVANT toute utilisation
+        self.app_preferences = file_operations.load_application_preferences()
 
         self.latest_results = {} # Stocke les derniers résultats de calcul
         self.latest_coupe_results = {} # Stocke les résultats de l'outil de profondeur de coupe
@@ -48,6 +50,18 @@ class ModernStairCalculator(tk.Tk):
         self.input_labels_map = {} 
         # REF-008: Ajout d'un drapeau pour éviter les boucles de mise à jour entre marches/contremarches
         self._is_updating_ui = False
+
+        # Ajout de la variable d'unités d'affichage
+        self.unites_var = tk.StringVar(value=self.app_preferences.get("unites_affichage", "pouces"))
+
+        # Import du module conversion (pour éviter les imports circulaires)
+        from utils import conversion
+        self.conversion = conversion
+    def on_unit_change(self):
+        unite_source = "Pouces" if self.unites_var.get() == "pouces" else "Centimètres"
+        unite_cible = "Centimètres" if unite_source == "Pouces" else "Pouces"
+        self.conversion.convertir_variables_interface(self.tk_input_vars_dict, unite_source, unite_cible)
+        self.recalculate_and_update_ui()
 
         # --- Définition des palettes de couleurs pour les thèmes ---
         self.themes = {
@@ -87,7 +101,21 @@ class ModernStairCalculator(tk.Tk):
         # Ces valeurs sont initialisées dans _setup_tk_variables
         # self.hauteur_cm_souhaitee_var.set("7 1/2")
         # self.giron_souhaite_var.set("9 1/4")
+    
+    def _finalize_startup(self):
+        if constants.DEBUG_MODE_ACTIVE:
+            print("DEBUG: Initialisation tardive de l'interface...")
+            print("  - HT:", self.hauteur_totale_var.get())
+            print("  - Giron:", self.giron_souhaite_var.get())
+            print("  - HCM:", self.hauteur_cm_souhaitee_var.get())
 
+        self.recalculate_and_update_ui()
+
+        if self.latest_results:
+            self.update_results_display()
+            self.update_visual_preview()
+            self.update_reports()
+        
     def _setup_style_definitions(self):
         """Configure les définitions de styles visuels de l'application."""
         self.style = ttk.Style(self)
@@ -162,6 +190,17 @@ class ModernStairCalculator(tk.Tk):
         # Nouvelle variable pour le message d'écart de hauteur totale
         self.hauteur_totale_ecart_message_var = tk.StringVar() 
 
+        # Dictionnaire pour conversion dynamique pouces/cm
+        self.tk_input_vars_dict = {
+            "hauteur_totale_escalier": self.hauteur_totale_var,
+            "giron_souhaite": self.giron_souhaite_var,
+            "hauteur_cm_souhaitee": self.hauteur_cm_souhaitee_var,
+            "epaisseur_plancher_sup": self.epaisseur_plancher_sup_var,
+            "epaisseur_plancher_inf": self.epaisseur_plancher_inf_var,
+            "longueur_tremie": self.profondeur_tremie_ouverture_var,
+            "position_tremie": self.position_tremie_var,
+            "espace_disponible": self.espace_disponible_var
+        }
 
     def _create_menu(self):
         """Crée la barre de menu de l'application."""
@@ -341,8 +380,15 @@ class ModernStairCalculator(tk.Tk):
         """
         input_frame = ttk.LabelFrame(parent, text="1. Entrées et Ajustements de l'Escalier")
         input_frame.pack(fill="x", pady=(0, 10))
-        input_frame.columnconfigure(1, weight=1) # Colonne pour les Entry
-        input_frame.columnconfigure(3, weight=1) # Colonne pour la 2e partie des Entry
+        input_frame.columnconfigure(1, weight=1)
+        input_frame.columnconfigure(3, weight=1)
+        # Ajout du sélecteur d'unités
+        unit_frame = ttk.LabelFrame(input_frame, text="Unités")
+        unit_frame.grid(row=0, column=4, rowspan=2, padx=5, pady=5, sticky="nsew")
+        self.radio_pouces = ttk.Radiobutton(unit_frame, text="Pouces", variable=self.unites_var, value="pouces", command=self.on_unit_change)
+        self.radio_cm = ttk.Radiobutton(unit_frame, text="Centimètres", variable=self.unites_var, value="cm", command=self.on_unit_change)
+        self.radio_pouces.grid(row=0, column=0, padx=2, pady=2)
+        self.radio_cm.grid(row=1, column=0, padx=2, pady=2)
         
         # Grid pour les entrées principales (ancienne Boîte 1)
         # Hauteur Totale, Epaisseur plancher, Trémie, Espace Disponible
@@ -362,7 +408,7 @@ class ModernStairCalculator(tk.Tk):
             self.input_labels_map[shortcut] = (label, text)
             entry_frame = ttk.Frame(input_frame)
             entry_frame.grid(row=row_idx, column=1, sticky="ew", padx=5, pady=3)
-            entry = ttk.Entry(entry_frame, textvariable=var, width=15, font=('Segoe UI', 10))
+            entry = ttk.Entry(entry_frame, textvariable=var, width=12, font=('Segoe UI', 10))
             entry.pack(side="left", fill="x", expand=True)
             if shortcut == "HT":
                 ttk.Button(entry_frame, text="Laser", command=lambda: self.open_laser_dialog(), width=6).pack(side="left", padx=(5,0))
@@ -663,53 +709,62 @@ class ModernStairCalculator(tk.Tk):
             if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_marches: {e}")
             pass
     
-    def decrement_hcm(self):
-        """Décrémente la hauteur contremarche souhaitée de 1/8 pouce."""
-        try:
-            current_val = formatting.parser_fraction(self.hauteur_cm_souhaitee_var.get() or str(constants.HAUTEUR_CM_CONFORT_CIBLE))
+def decrement_hcm(self):
+    """Décrémente la hauteur contremarche souhaitée de 1/8 pouce (ou ≈ 0.3175 cm)."""
+    try:
+        unite = self.unites_var.get()
+        valeur_par_defaut = constants.HAUTEUR_CM_CONFORT_CIBLE
+        texte = self.hauteur_cm_souhaitee_var.get()
+
+        if not texte:
+            texte = str(valeur_par_defaut * constants.POUCE_EN_CM) if unite == "cm" else str(valeur_par_defaut)
+
+        current_val = formatting.parser_fraction(texte)
+
+        if unite == "cm":
+            new_val = max(constants.HAUTEUR_CM_MIN_REGLEMENTAIRE * constants.POUCE_EN_CM, current_val - 0.3175)
+            self.hauteur_cm_souhaitee_var.set(f"{new_val:.2f}")
+        else:
             new_val = max(constants.HAUTEUR_CM_MIN_REGLEMENTAIRE, current_val - 0.125)
             self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
-        except ValueError:
-            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.HAUTEUR_CM_CONFORT_CIBLE - 0.125, self.app_preferences))
-        except Exception as e:
-            if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans decrement_hcm: {e}")
-            pass
+    except ValueError:
+        fallback = valeur_par_defaut - (0.3175 if unite == "cm" else 0.125)
+        if unite == "cm":
+            self.hauteur_cm_souhaitee_var.set(f"{fallback * constants.POUCE_EN_CM:.2f}")
+        else:
+            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(fallback, self.app_preferences))
+    except Exception as e:
+        if constants.DEBUG_MODE_ACTIVE:
+            print(f"Erreur dans decrement_hcm: {e}")
 
-    def increment_hcm(self):
-        """Incrémente la hauteur contremarche souhaitée de 1/8 pouce."""
-        try:
-            current_val = formatting.parser_fraction(self.hauteur_cm_souhaitee_var.get() or str(constants.HAUTEUR_CM_CONFORT_CIBLE))
+
+def increment_hcm(self):
+    """Incrémente la hauteur contremarche souhaitée de 1/8 pouce (ou ≈ 0.3175 cm)."""
+    try:
+        unite = self.unites_var.get()
+        valeur_par_defaut = constants.HAUTEUR_CM_CONFORT_CIBLE
+        texte = self.hauteur_cm_souhaitee_var.get()
+
+        if not texte:
+            texte = str(valeur_par_defaut * constants.POUCE_EN_CM) if unite == "cm" else str(valeur_par_defaut)
+
+        current_val = formatting.parser_fraction(texte)
+
+        if unite == "cm":
+            new_val = min(constants.HAUTEUR_CM_MAX_REGLEMENTAIRE * constants.POUCE_EN_CM, current_val + 0.3175)
+            self.hauteur_cm_souhaitee_var.set(f"{new_val:.2f}")
+        else:
             new_val = min(constants.HAUTEUR_CM_MAX_REGLEMENTAIRE, current_val + 0.125)
             self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
-        except ValueError:
-            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.HAUTEUR_CM_CONFORT_CIBLE + 0.125, self.app_preferences))
-        except Exception as e:
-            if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_hcm: {e}")
-            pass
-
-    def decrement_giron(self):
-        """Décrémente le giron souhaité de 1/8 pouce."""
-        try:
-            current_val = formatting.parser_fraction(self.giron_souhaite_var.get() or str(constants.GIRON_CONFORT_MIN_RES_STANDARD))
-            new_val = max(constants.GIRON_MIN_REGLEMENTAIRE, current_val - 0.125)
-            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
-        except ValueError:
-            self.giron_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD - 0.125, self.app_preferences))
-        except Exception as e:
-            if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_giron: {e}")
-            pass
-
-    def increment_giron(self):
-        """Incrémente le giron souhaité de 1/8 pouce."""
-        try:
-            current_val = formatting.parser_fraction(self.giron_souhaite_var.get() or str(constants.GIRON_CONFORT_MIN_RES_STANDARD))
-            new_val = min(constants.GIRON_MAX_REGLEMENTAIRE, current_val + 0.125)
-            self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(new_val, self.app_preferences))
-        except ValueError:
-            self.giron_souhaitee_var.set(formatting.decimal_to_fraction_str(constants.GIRON_CONFORT_MIN_RES_STANDARD + 0.125, self.app_preferences))
-        except Exception as e:
-            if constants.DEBUG_MODE_ACTIVE: print(f"Erreur dans increment_giron: {e}")
-            pass
+    except ValueError:
+        fallback = valeur_par_defaut + (0.3175 if unite == "cm" else 0.125)
+        if unite == "cm":
+            self.hauteur_cm_souhaitee_var.set(f"{fallback * constants.POUCE_EN_CM:.2f}")
+        else:
+            self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(fallback, self.app_preferences))
+    except Exception as e:
+        if constants.DEBUG_MODE_ACTIVE:
+            print(f"Erreur dans increment_hcm: {e}")
 
     def apply_ideal_values(self):
         """Applique des valeurs idéales prédéfinies pour le confort."""
@@ -735,64 +790,79 @@ class ModernStairCalculator(tk.Tk):
         messagebox.showinfo("Valeurs Idéales", "Les valeurs de giron et de hauteur de contremarche de confort ont été appliquées.", parent=self)
 
 
-    def recalculate_and_update_ui(self, *args, changed_var_name=None):
-        """
-        Recalcule les dimensions de l'escalier et met à jour l'interface.
-        Gère la priorité entre la saisie manuelle de CM et de Marches.
-        """
-        if self._is_updating_ui:
-            return
-        self._is_updating_ui = True
-        self.clear_messages()
+# CONTENU DE LA METHODE : recalculate_and_update_ui
 
-        try:
-            # Appel de la nouvelle fonction unifiée de calcul
-            calc_output = calculations.calculer_escalier_ajuste(
-                hauteur_totale_escalier_str=self.hauteur_totale_var.get(),
-                giron_souhaite_str=self.giron_souhaite_var.get(),
-                hauteur_cm_souhaitee_str=self.hauteur_cm_souhaitee_var.get(),
-                nombre_marches_manuel_str=self.nombre_marches_manuel_var.get(),
-                nombre_cm_manuel_str=self.nombre_cm_manuel_var.get(),
-                epaisseur_plancher_sup_str=self.epaisseur_plancher_sup_var.get(),
-                epaisseur_plancher_inf_str=self.epaisseur_plancher_inf_var.get(),
-                profondeur_tremie_ouverture_str=self.profondeur_tremie_ouverture_var.get(),
-                position_tremie_ouverture_str=self.position_tremie_var.get(),
-                espace_disponible_str=self.espace_disponible_var.get(),
-                loaded_app_preferences_dict=self.app_preferences,
-                changed_var_name=changed_var_name
+def recalculate_and_update_ui(self, *args, changed_var_name=None):
+    """
+    Recalcule les dimensions de l'escalier et met à jour l'interface.
+    Gère la priorité entre la saisie manuelle de CM et de Marches.
+    """
+    if self._is_updating_ui:
+        return
+    self._is_updating_ui = True
+    self.clear_messages()
+
+    try:
+        # Déterminer l'unité courante pour le calcul
+        unite = "Pouces" if self.unites_var.get() == "pouces" else "Centimètres"
+
+        # Appel de la fonction principale
+        calc_output = calculations.calculer_escalier_ajuste(
+            hauteur_totale_escalier_str=self.hauteur_totale_var.get(),
+            giron_souhaite_str=self.giron_souhaite_var.get(),
+            hauteur_cm_souhaitee_str=self.hauteur_cm_souhaitee_var.get(),
+            nombre_marches_manuel_str=self.nombre_marches_manuel_var.get(),
+            nombre_cm_manuel_str=self.nombre_cm_manuel_var.get(),
+            epaisseur_plancher_sup_str=self.epaisseur_plancher_sup_var.get(),
+            epaisseur_plancher_inf_str=self.epaisseur_plancher_inf_var.get(),
+            profondeur_tremie_ouverture_str=self.profondeur_tremie_ouverture_var.get(),
+            position_tremie_ouverture_str=self.position_tremie_var.get(),
+            espace_disponible_str=self.espace_disponible_var.get(),
+            loaded_app_preferences_dict=self.app_preferences,
+            changed_var_name=changed_var_name,
+            unite=unite
+        )
+
+        self.latest_results = calc_output["results"]
+        global_warnings = calc_output["warnings"]
+        global_is_conform = calc_output["is_conform"]
+
+        # Mise à jour des champs en fonction des résultats calculés
+        if self.latest_results.get("hauteur_reelle_contremarche") is not None:
+            self.hauteur_cm_souhaitee_var.set(
+                formatting.decimal_to_fraction_str(
+                    self.latest_results["hauteur_reelle_contremarche"],
+                    self.app_preferences
+                )
             )
+        if self.latest_results.get("giron_utilise") is not None:
+            self.giron_souhaite_var.set(
+                formatting.decimal_to_fraction_str(
+                    self.latest_results["giron_utilise"],
+                    self.app_preferences
+                )
+            )
+        if self.latest_results.get("nombre_contremarches") is not None:
+            self.nombre_cm_manuel_var.set(str(self.latest_results["nombre_contremarches"]))
+        if self.latest_results.get("nombre_girons") is not None:
+            self.nombre_marches_manuel_var.set(str(self.latest_results["nombre_girons"]))
 
-            self.latest_results = calc_output["results"]
-            global_warnings = calc_output["warnings"]
-            global_is_conform = calc_output["is_conform"]
+        self.update_results_display()
+        self.update_warnings_display(global_warnings, global_is_conform)
+        self.update_visual_preview()
+        self.update_reports()
 
-            # Mise à jour des champs interactifs avec les valeurs ajustées par la logique de calcul
-            # Cela assure la cohérence visuelle dans la boite 1/2 fusionnée
-            if self.latest_results.get("hauteur_reelle_contremarche") is not None:
-                self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(self.latest_results["hauteur_reelle_contremarche"], self.app_preferences))
-            if self.latest_results.get("giron_utilise") is not None:
-                self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(self.latest_results["giron_utilise"], self.app_preferences))
-            if self.latest_results.get("nombre_contremarches") is not None:
-                self.nombre_cm_manuel_var.set(str(self.latest_results["nombre_contremarches"]))
-            if self.latest_results.get("nombre_girons") is not None:
-                self.nombre_marches_manuel_var.set(str(self.latest_results["nombre_girons"]))
+    except Exception as e:
+        self.conformity_status_var.set("ERREUR DE SAISIE")
+        self.warnings_var.set(f"Format invalide ou données insuffisantes.\n({e})")
+        self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
+        self.clear_results_display()
 
-            # Mettre à jour l'affichage des résultats et des messages
-            self.update_results_display()
-            self.update_warnings_display(global_warnings, global_is_conform) # Passer les warnings et conformité
-
-            self.update_visual_preview()
-            self.update_reports()
-
-        except Exception as e:
-            self.conformity_status_var.set("ERREUR DE SAISIE")
-            self.warnings_var.set(f"Format invalide ou données insuffisantes.\n({e})")
-            self.conformity_label.config(foreground=self.themes[self.current_theme]["error"])
-            self.clear_results_display()
-            if constants.DEBUG_MODE_ACTIVE:
-                raise # Rélève l'exception complète en mode débogage pour un diagnostic précis
-        finally:
-            self._is_updating_ui = False
+        if constants.DEBUG_MODE_ACTIVE:
+            import traceback
+            traceback.print_exc()
+    finally:
+        self._is_updating_ui = False
 
 
     def update_results_display(self):
@@ -976,7 +1046,10 @@ class ModernStairCalculator(tk.Tk):
 
 # --- DÉBUT DU BLOC DE DÉMARRAGE DE L'APPLICATION ---
 # C'est ce bloc qui permet à l'application Tkinter de se lancer
-if __name__ == "__main__":
-    app = ModernStairCalculator()
-    app.mainloop()
+    if __name__ == "__main__":
+        import core.constants as constants
+        constants.DEBUG_MODE_ACTIVE = True  # Active temporairement le débogage
+
+        app = ModernStairCalculator()
+        app.mainloop()  
 # --- FIN DU BLOC DE DÉMARRAGE DE L'APPLICATION ---

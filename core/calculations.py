@@ -20,7 +20,8 @@ def calculer_escalier_ajuste(
     position_tremie_ouverture_str,
     espace_disponible_str,
     loaded_app_preferences_dict,
-    changed_var_name=None # Nom de la variable qui a déclenché le calcul
+    changed_var_name=None, # Nom de la variable qui a déclenché le calcul
+    unite="Pouces" # NOUVEAU : unité d'entrée ("Pouces" ou "Centimètres")
 ):
     """
     Calcule les dimensions optimales d'un escalier en fonction des entrées utilisateur
@@ -56,23 +57,26 @@ def calculer_escalier_ajuste(
 
     # --- 1. Parsing et Validation des entrées brutes ---
     # Convertir toutes les entrées en pouces décimaux
+    def parse_value(val):
+        v = parser_fraction(val)
+        if unite == "Centimètres":
+            return v / POUCE_EN_CM
+        return v
     try:
-        hauteur_totale_escalier = parser_fraction(hauteur_totale_escalier_str)
-        giron_souhaite = parser_fraction(giron_souhaite_str)
-        hauteur_cm_souhaitee = parser_fraction(hauteur_cm_souhaitee_str)
-        epaisseur_plancher_sup = parser_fraction(epaisseur_plancher_sup_str)
-        epaisseur_plancher_inf = parser_fraction(epaisseur_plancher_inf_str)
-        
-        # Les champs optionnels peuvent être vides
-        profondeur_tremie_ouverture = parser_fraction(profondeur_tremie_ouverture_str) if profondeur_tremie_ouverture_str.strip() else 0.0
-        position_tremie_ouverture = parser_fraction(position_tremie_ouverture_str) if position_tremie_ouverture_str.strip() else 0.0
-        espace_disponible = parser_fraction(espace_disponible_str) if espace_disponible_str.strip() else 0.0
+        hauteur_totale_escalier = parse_value(hauteur_totale_escalier_str)
+        giron_souhaite = parse_value(giron_souhaite_str)
+        hauteur_cm_souhaitee = parse_value(hauteur_cm_souhaitee_str)
+        epaisseur_plancher_sup = parse_value(epaisseur_plancher_sup_str)
+        epaisseur_plancher_inf = parse_value(epaisseur_plancher_inf_str)
+        profondeur_tremie_ouverture = parse_value(profondeur_tremie_ouverture_str) if profondeur_tremie_ouverture_str.strip() else 0.0
+        position_tremie_ouverture = parse_value(position_tremie_ouverture_str) if position_tremie_ouverture_str.strip() else 0.0
+        espace_disponible = parse_value(espace_disponible_str) if espace_disponible_str.strip() else 0.0
 
         nombre_marches_manuel = int(nombre_marches_manuel_str) if nombre_marches_manuel_str.strip() else None
         nombre_cm_manuel = int(nombre_cm_manuel_str) if nombre_cm_manuel_str.strip() else None
         
         # Récupérer l'épaisseur de marche par défaut des préférences
-        epaisseur_marche = parser_fraction(loaded_app_preferences_dict.get("default_tread_thickness", "1 1/16"))
+        epaisseur_marche = parse_value(loaded_app_preferences_dict.get("default_tread_thickness", "1 1/16"))
         
         results["kwargs"]["epaisseur_marche"] = epaisseur_marche
         results["kwargs"]["epaisseur_plancher_sup"] = epaisseur_plancher_sup
@@ -320,29 +324,52 @@ def calculer_escalier_ajuste(
     results["min_echappee_calculee"] = min_echappee_calculee
     results["blondel_value"] = blondel_value
 
+    # À LA FIN : convertir les résultats en cm si besoin
+    if unite == "Centimètres":
+        def to_cm(val):
+            return val * POUCE_EN_CM if val is not None else None
+        for k in [
+            "hauteur_totale_escalier", "hauteur_reelle_contremarche", "giron_utilise", "longueur_calculee_escalier",
+            "longueur_limon_approximative", "min_echappee_calculee", "blondel_value", "ecart_hauteur"]:
+            if k in results and results[k] is not None:
+                results[k] = to_cm(results[k])
+
     return {"results": results, "warnings": warnings, "is_conform": is_conform}
 
 from core.constants import POUCE_EN_CM, TOLERANCE_MESURE_LASER
 from utils.formatting import parser_fraction
 
 
-def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, preferences):
+def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, preferences, unite="Pouces"):
     """
     Calcule la hauteur totale d'escalier à partir de 4 mesures laser + hauteur laser au sol.
     Retourne un dictionnaire avec la hauteur en pouces, en mètres, et des observations.
     """
     try:
-        hls = parser_fraction(hls_str)
-        hg = parser_fraction(hg_str)
-        hd = parser_fraction(hd_str)
-        bg = parser_fraction(bg_str)
-        bd = parser_fraction(bd_str)
+        def parse_value(val):
+            v = parser_fraction(val)
+            if unite == "Centimètres":
+                return v / POUCE_EN_CM
+            return v
+        hls = parse_value(hls_str)
+        hg = parse_value(hg_str)
+        hd = parse_value(hd_str)
+        bg = parse_value(bg_str)
+        bd = parse_value(bd_str)
 
         haut = (hg + hd) / 2
         bas = (bg + bd) / 2
 
         hauteur_totale_pouces = haut - bas + hls
         hauteur_metres = hauteur_totale_pouces * POUCE_EN_CM / 100
+
+        if unite == "Centimètres":
+            hauteur_totale_cm = hauteur_totale_pouces * POUCE_EN_CM
+            return {
+                "hauteur_totale_calculee_cm": hauteur_totale_cm,
+                "hauteur_totale_calculee_metres": hauteur_totale_cm / 100,
+                "observations": []
+            }
 
         observations = []
         if abs(hg - hd) > TOLERANCE_MESURE_LASER:

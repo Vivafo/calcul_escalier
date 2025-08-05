@@ -1,3 +1,5 @@
+# Tolérance pour la différence de mesures laser (en pouces)
+TOLERANCE_MESURE_LASER = 0.25  # 1/4 pouce, valeur typique pour signaler un écart significatif
 # Fichier: CalculateurEscalier/core/constants.py
 
 import os # Importation nécessaire pour os.path.join
@@ -5,8 +7,10 @@ import os # Importation nécessaire pour os.path.join
 # Version du programme
 VERSION_PROGRAMME = "0.5.0"
 
+
 # Unités et conversions
 POUCE_EN_MM = 25.4
+POUCE_EN_CM = 2.54
 
 # Constantes pour le calcul des escaliers (selon le Code de construction du Québec, version récente et guide APCHQ)
 
