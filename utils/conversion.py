@@ -1,31 +1,40 @@
-"""
-Module de conversion d'unités pour le Calculateur d'Escalier VIP.
-Permet de convertir dynamiquement toutes les variables d'interface Tkinter
-lors du changement d'unité (Pouces <-> Centimètres).
-"""
+# Fichier: utils/conversion.py
 
-POUCE_EN_CM = 2.54
+from core import constants
+from utils import formatting
 
-
-def convertir_variables_interface(tk_input_vars_dict, unite_source, unite_cible):
+def convertir_variables_interface(app_instance, tk_vars_dict, unite_cible_str, prefs):
     """
-    Convertit toutes les variables d'entrée de l'interface Tkinter d'une unité à l'autre.
-    tk_input_vars_dict : dict {nom_champ: tk.StringVar}
-    unite_source : "Pouces" ou "Centimètres"
-    unite_cible : "Pouces" ou "Centimètres"
+    Convertit les valeurs des variables Tkinter d'une unité à une autre.
+    'unite_cible_str' est soit 'pouces' soit 'cm'.
     """
-    if unite_source == unite_cible:
+    if app_instance._is_updating_ui:
         return
-    for var in tk_input_vars_dict.values():
-        try:
-            val = var.get().replace(",", ".")
-            if not val.strip():
+    app_instance._is_updating_ui = True
+
+    try:
+        # Détermine l'unité source en se basant sur la cible
+        unite_source_str = 'cm' if unite_cible_str == 'pouces' else 'pouces'
+
+        for key, var_obj in tk_vars_dict.items():
+            valeur_str = var_obj.get()
+            if not valeur_str:
                 continue
-            v = eval(val) if "/" not in val else eval(val.replace("/", "/1.0/"))
-            if unite_source == "Pouces" and unite_cible == "Centimètres":
-                v = v * POUCE_EN_CM
-            elif unite_source == "Centimètres" and unite_cible == "Pouces":
-                v = v / POUCE_EN_CM
-            var.set(str(round(v, 3)))
-        except Exception:
-            continue
+
+            try:
+                valeur_numerique = formatting.parser_fraction(valeur_str)
+                
+                if unite_source_str == 'pouces' and unite_cible_str == 'cm':
+                    # Convertir des pouces en centimètres
+                    new_val = valeur_numerique * constants.POUCE_EN_CM
+                    var_obj.set(f"{new_val:.2f}")
+
+                elif unite_source_str == 'cm' and unite_cible_str == 'pouces':
+                    # Convertir des centimètres en pouces
+                    new_val = valeur_numerique / constants.POUCE_EN_CM
+                    var_obj.set(formatting.decimal_to_fraction_str(new_val, prefs))
+
+            except (ValueError, TypeError):
+                continue
+    finally:
+        app_instance._is_updating_ui = False
