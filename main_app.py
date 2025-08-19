@@ -1,11 +1,16 @@
 # Fichier: main_app.py
 
+import sys
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 import math
 import subprocess
 import json
-import os
+
+# CORRECTION: Ajoute le répertoire du projet au chemin de recherche de Python
+# pour s'assurer que les modules (core, utils, gui) sont toujours trouvés.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core import constants, calculations
 from utils import formatting, reporting, file_operations
