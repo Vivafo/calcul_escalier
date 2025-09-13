@@ -8,17 +8,32 @@ import math
 import subprocess
 import json
 
-# CORRECTION: Ajoute le répertoire du projet au chemin de recherche de Python
-# pour s'assurer que les modules (core, utils, gui) sont toujours trouvés.
+# Ajout du chemin du projet au PYTHONPATH
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core import constants, calculations
+# Importer le module constants en premier
+from core import constants
+from core.constants import (
+    DEFAULTS_FILE,
+    DEFAULT_APP_PREFERENCES,
+    HAUTEUR_CM_MIN_REGLEMENTAIRE,
+    HAUTEUR_CM_MAX_REGLEMENTAIRE,
+    HAUTEUR_CM_CONFORT_CIBLE,
+    GIRON_MIN_REGLEMENTAIRE,
+    GIRON_MAX_REGLEMENTAIRE,
+    POUCE_EN_CM,
+    POUCE_EN_MM,
+    TOLERANCE_MESURE_LASER,
+    VERSION_PROGRAMME,
+    DEBUG_MODE_ACTIVE
+)
+
 from utils import formatting, reporting, file_operations
 from gui.dialogs import PreferencesDialog, LaserDialog
+from core.stair_logic import StairCalculator
+from core import calculations
 
 # --- Vérification et création du dossier et fichier de préférences ---
-from core.constants import DEFAULTS_FILE, DEFAULT_APP_PREFERENCES
-
 # Vérifier si le dossier data existe, sinon le créer
 os.makedirs(os.path.dirname(DEFAULTS_FILE), exist_ok=True)
 
@@ -137,6 +152,13 @@ class ModernStairCalculator(tk.Tk):
             "epaisseur_plancher_inf": self.epaisseur_plancher_inf_var, "longueur_tremie": self.profondeur_tremie_ouverture_var,
             "position_tremie": self.position_tremie_var, "espace_disponible": self.espace_disponible_var
         }
+
+        # Ajouter après l'initialisation des variables:
+        # Définir les valeurs par défaut pour éviter les erreurs
+        if not self.nombre_cm_manuel_var.get().strip():
+            self.nombre_cm_manuel_var.set("14")  # Valeur initiale typique
+        if not self.nombre_marches_manuel_var.get().strip():
+            self.nombre_marches_manuel_var.set("13")  # CM - 1
 
     def _create_menu(self):
         menubar = tk.Menu(self)
@@ -356,35 +378,117 @@ class ModernStairCalculator(tk.Tk):
         self.nombre_cm_manuel_var.trace_add("write", lambda *args, vn="nombre_cm_manuel_var": self.recalculate_and_update_ui(changed_var_name=vn))
         self.nombre_marches_manuel_var.trace_add("write", lambda *args, vn="nombre_marches_manuel_var": self.recalculate_and_update_ui(changed_var_name=vn))
         self.canvas.bind("<Configure>", self.update_visual_preview)
+        self.hauteur_totale_var.trace_add("write", lambda *args: self._update_from_height())
+
+    def _update_from_height(self):
+        """Met à jour les valeurs quand la hauteur totale change"""
+        if self._is_updating_ui:
+            return
+        try:
+            height = formatting.parser_fraction(self.hauteur_totale_var.get())
+            if height <= 0:
+                return
+                
+            # Calcul du nombre de contremarches optimal
+            hcm_ideal = constants.HAUTEUR_CM_CONFORT_CIBLE
+            nb_cm = max(2, round(height / hcm_ideal))
+            hcm_reel = height / nb_cm
+            
+            # Mise à jour des champs
+            self._is_updating_ui = True
+            self.nombre_cm_manuel_var.set(str(nb_cm))
+            self.nombre_marches_manuel_var.set(str(nb_cm - 1))
+            self.hauteur_cm_souhaitee_var.set(
+                formatting.decimal_to_fraction_str(hcm_reel, self.app_preferences)
+            )
+            
+            if constants.DEBUG_MODE_ACTIVE:
+                print(f"DEBUG - Mise à jour depuis hauteur {height}: CM={nb_cm}, HCM={hcm_reel}")
+        finally:
+            self._is_updating_ui = False
+            self.recalculate_and_update_ui()
+
+    def _update_from_marches(self, new_nb_marches):
+        """Met à jour les valeurs quand le nombre de marches change"""
+        if self._is_updating_ui:
+            return
+        try:
+            self._is_updating_ui = True
+            nb_cm = new_nb_marches + 1
+            self.nombre_cm_manuel_var.set(str(nb_cm))
+            
+            # Si on a une hauteur totale, on ajuste la hauteur de contremarche
+            height = formatting.parser_fraction(self.hauteur_totale_var.get() or "0")
+            if height > 0:
+                hcm = height / nb_cm
+                self.hauteur_cm_souhaitee_var.set(
+                    formatting.decimal_to_fraction_str(hcm, self.app_preferences)
+                )
+            
+            if constants.DEBUG_MODE_ACTIVE:
+                print(f"DEBUG - Mise à jour depuis marches {new_nb_marches}: CM={nb_cm}")
+        finally:
+            self._is_updating_ui = False
+            self.recalculate_and_update_ui()
+
+    def _update_from_cm(self, new_nb_cm):
+        """Met à jour les valeurs quand le nombre de contremarches change"""
+        if self._is_updating_ui:
+            return
+        try:
+            self._is_updating_ui = True
+            self.nombre_marches_manuel_var.set(str(new_nb_cm - 1))
+            
+            # Si on a une hauteur totale, on ajuste la hauteur de contremarche
+            height = formatting.parser_fraction(self.hauteur_totale_var.get() or "0")
+            if height > 0:
+                hcm = height / new_nb_cm
+                self.hauteur_cm_souhaitee_var.set(
+                    formatting.decimal_to_fraction_str(hcm, self.app_preferences)
+                )
+            
+            if constants.DEBUG_MODE_ACTIVE:
+                print(f"DEBUG - Mise à jour depuis CM {new_nb_cm}")
+        finally:
+            self._is_updating_ui = False
+            self.recalculate_and_update_ui()
 
     def decrement_cm(self):
+        """Décrémente le nombre de contremarches"""
         try:
-            current_val_str = self.nombre_cm_manuel_var.get()
-            current_val = int(current_val_str) if current_val_str.strip() else self.latest_results.get("nombre_contremarches", 2)
-            if current_val > 2: self.nombre_cm_manuel_var.set(str(current_val - 1))
-        except (ValueError, Exception): pass
+            current_val = int(self.nombre_cm_manuel_var.get().strip() or "0")
+            if current_val > 2:
+                self._update_from_cm(current_val - 1)
+        except ValueError:
+            pass
 
     def increment_cm(self):
+        """Incrémente le nombre de contremarches"""
         try:
-            current_val_str = self.nombre_cm_manuel_var.get()
-            current_val = int(current_val_str) if current_val_str.strip() else self.latest_results.get("nombre_contremarches", 1)
-            if current_val < 50: self.nombre_cm_manuel_var.set(str(current_val + 1))
-        except (ValueError, Exception): pass
+            current_val = int(self.nombre_cm_manuel_var.get().strip() or "0")
+            if current_val < 50:
+                self._update_from_cm(current_val + 1)
+        except ValueError:
+            pass
 
     def decrement_marches(self):
+        """Décrémente le nombre de marches"""
         try:
-            current_val_str = self.nombre_marches_manuel_var.get()
-            current_val = int(current_val_str) if current_val_str.strip() else self.latest_results.get("nombre_girons", 1)
-            if current_val > 1: self.nombre_marches_manuel_var.set(str(current_val - 1))
-        except (ValueError, Exception): pass
+            current_val = int(self.nombre_marches_manuel_var.get().strip() or "0")
+            if current_val > 1:
+                self._update_from_marches(current_val - 1)
+        except ValueError:
+            pass
 
     def increment_marches(self):
+        """Incrémente le nombre de marches"""
         try:
-            current_val_str = self.nombre_marches_manuel_var.get()
-            current_val = int(current_val_str) if current_val_str.strip() else self.latest_results.get("nombre_girons", 0)
-            if current_val < 49: self.nombre_marches_manuel_var.set(str(current_val + 1))
-        except (ValueError, Exception): pass
-    
+            current_val = int(self.nombre_marches_manuel_var.get().strip() or "0")
+            if current_val < 49:
+                self._update_from_marches(current_val + 1)
+        except ValueError:
+            pass
+
     def decrement_hcm(self):
         try:
             current_val = formatting.parser_fraction(self.hauteur_cm_souhaitee_var.get())
@@ -428,45 +532,147 @@ class ModernStairCalculator(tk.Tk):
         if self._is_updating_ui: return
         self._is_updating_ui = True
         self.clear_messages()
+        
         try:
-            # CORRECTION: S'assurer que l'unité est envoyée avec une majuscule
+            # Vérification de l'initialisation des modules
+            if not hasattr(constants, 'HAUTEUR_CM_MIN_REGLEMENTAIRE'):
+                raise ImportError("Les constantes n'ont pas été correctement chargées")
+
+            # 1. Récupération des valeurs
+            input_values = {
+                'hauteur_totale': self.hauteur_totale_var.get().strip(),
+                'hauteur_cm': self.hauteur_cm_souhaitee_var.get().strip(),
+                'nb_cm': self.nombre_cm_manuel_var.get().strip(),
+                'nb_marches': self.nombre_marches_manuel_var.get().strip(),
+                'giron': self.giron_souhaite_var.get().strip(),
+                'ep_plancher_sup': self.epaisseur_plancher_sup_var.get().strip(),
+                'ep_plancher_inf': self.epaisseur_plancher_inf_var.get().strip()
+            }
+
+            if constants.DEBUG_MODE_ACTIVE:
+                print("\nDEBUG - Valeurs d'entrée:")
+                for k, v in input_values.items():
+                    print(f"  {k}: '{v}'")
+
+            # 2. Validation des formats
+            required_numeric_fields = {
+                'giron': input_values['giron'],
+                'ep_plancher_sup': input_values['ep_plancher_sup'],
+                'ep_plancher_inf': input_values['ep_plancher_inf']
+            }
+
+            # Vérification des champs numériques obligatoires
+            for field_name, value in required_numeric_fields.items():
+                if not value:
+                    raise ValueError(f"Le champ {field_name} est obligatoire")
+                try:
+                    _ = formatting.parser_fraction(value)
+                except Exception as e:
+                    raise ValueError(f"Format invalide pour {field_name}: {value} ({str(e)})")
+
+            # 3. Vérification de la règle de saisie minimale
+            valid_combinations = [
+                input_values['hauteur_totale'] and input_values['hauteur_cm'],  # Cas 1
+                input_values['nb_cm'] and input_values['hauteur_cm']           # Cas 2
+                # Cas 3 supprimé car redondant avec le calcul automatique du nombre de contremarches
+            ]
+
+            if not any(valid_combinations):
+                raise ValueError("Configuration invalide: fournir (hauteur totale ET hauteur CM) OU (nombre CM ET hauteur CM)")
+
+            # 4. Conversion et calcul
             unite_calcul = "Pouces" if self.unites_var.get() == "pouces" else "Centimètres"
+            
+            if constants.DEBUG_MODE_ACTIVE:
+                print(f"\nDEBUG - Lancement calcul avec unité: {unite_calcul}")
 
             calc_output = calculations.calculer_escalier_ajuste(
-                hauteur_totale_escalier_str=self.hauteur_totale_var.get(), giron_souhaite_str=self.giron_souhaite_var.get(),
-                hauteur_cm_souhaitee_str=self.hauteur_cm_souhaitee_var.get(), nombre_marches_manuel_str=self.nombre_marches_manuel_var.get(),
-                nombre_cm_manuel_str=self.nombre_cm_manuel_var.get(), epaisseur_plancher_sup_str=self.epaisseur_plancher_sup_var.get(),
-                epaisseur_plancher_inf_str=self.epaisseur_plancher_inf_var.get(), profondeur_tremie_ouverture_str=self.profondeur_tremie_ouverture_var.get(),
-                position_tremie_ouverture_str=self.position_tremie_var.get(), espace_disponible_str=self.espace_disponible_var.get(),
-                loaded_app_preferences_dict=self.app_preferences, changed_var_name=changed_var_name,
+                hauteur_totale_escalier_str=input_values['hauteur_totale'],
+                giron_souhaite_str=input_values['giron'],
+                hauteur_cm_souhaitee_str=input_values['hauteur_cm'],
+                nombre_marches_manuel_str=input_values['nb_marches'],
+                nombre_cm_manuel_str=input_values['nb_cm'],
+                epaisseur_plancher_sup_str=input_values['ep_plancher_sup'],
+                epaisseur_plancher_inf_str=input_values['ep_plancher_inf'],
+                profondeur_tremie_ouverture_str=self.profondeur_tremie_ouverture_var.get(),
+                position_tremie_ouverture_str=self.position_tremie_var.get(),
+                espace_disponible_str=self.espace_disponible_var.get(),
+                loaded_app_preferences_dict=self.app_preferences,
+                changed_var_name=changed_var_name,
                 unite=unite_calcul
             )
-            self.latest_results = calc_output["results"]
+
+            # 5. Traitement des résultats
+            self.latest_results = calc_output.get("results", {})
             
-            if self.latest_results:
-                hcm_reelle_pouces = self.latest_results.get("hauteur_reelle_contremarche")
-                giron_utilise_pouces = self.latest_results.get("giron_utilise")
-                
-                if self.unites_var.get() == 'pouces':
-                    if hcm_reelle_pouces is not None: self.hauteur_cm_souhaitee_var.set(formatting.decimal_to_fraction_str(hcm_reelle_pouces, self.app_preferences))
-                    if giron_utilise_pouces is not None: self.giron_souhaite_var.set(formatting.decimal_to_fraction_str(giron_utilise_pouces, self.app_preferences))
-                else: # Mode 'cm'
-                    if hcm_reelle_pouces is not None: self.hauteur_cm_souhaitee_var.set(f"{hcm_reelle_pouces * constants.POUCE_EN_CM:.2f}")
-                    if giron_utilise_pouces is not None: self.giron_souhaite_var.set(f"{giron_utilise_pouces * constants.POUCE_EN_CM:.2f}")
+            if constants.DEBUG_MODE_ACTIVE:
+                print("\nDEBUG - Résultats reçus:", bool(self.latest_results))
+                if self.latest_results:
+                    print("  - nb_girons:", self.latest_results.get("nombre_girons"))
+                    print("  - hauteur_cm:", self.latest_results.get("hauteur_reelle_contremarche"))
+                    print("  - giron:", self.latest_results.get("giron_utilise"))
 
-                if self.latest_results.get("nombre_contremarches") is not None: self.nombre_cm_manuel_var.set(str(self.latest_results["nombre_contremarches"]))
-                if self.latest_results.get("nombre_girons") is not None: self.nombre_marches_manuel_var.set(str(self.latest_results["nombre_girons"]))
+            if not self.latest_results:
+                raise ValueError("Aucun résultat retourné par le calcul")
 
+            # 6. Mise à jour de l'interface
+            self._update_interface_from_results(self.latest_results)
             self.update_results_display()
             self.update_warnings_display(calc_output["warnings"], calc_output["is_conform"])
             self.update_visual_preview()
             self.update_reports()
+
+        except ValueError as ve:
+            self.conformity_status_var.set("DONNÉES INVALIDES")
+            self.warnings_var.set(f"Erreur de validation: {str(ve)}")
+            if constants.DEBUG_MODE_ACTIVE:
+                print(f"\nDEBUG - Erreur de validation: {str(ve)}")
         except Exception as e:
-            self.conformity_status_var.set("ERREUR DE SAISIE")
-            self.warnings_var.set(f"Format invalide ou données insuffisantes.\n({e})")
-            if constants.DEBUG_MODE_ACTIVE: import traceback; traceback.print_exc()
+            self.conformity_status_var.set("ERREUR DE CALCUL")
+            self.warnings_var.set(f"Une erreur inattendue s'est produite: {str(e)}")
+            if constants.DEBUG_MODE_ACTIVE:
+                import traceback
+                print("\nDEBUG - Erreur inattendue:")
+                traceback.print_exc()
         finally:
             self._is_updating_ui = False
+
+    def _update_interface_from_results(self, results):
+        """Nouvelle méthode pour centraliser la mise à jour des champs depuis les résultats"""
+        if not results:
+            return
+
+        # Mise à jour des valeurs calculées
+        if self.unites_var.get() == 'pouces':
+            if results.get("hauteur_reelle_contremarche") is not None:
+                self.hauteur_cm_souhaitee_var.set(
+                    formatting.decimal_to_fraction_str(
+                        results["hauteur_reelle_contremarche"], 
+                        self.app_preferences
+                    )
+                )
+            if results.get("giron_utilise") is not None:
+                self.giron_souhaite_var.set(
+                    formatting.decimal_to_fraction_str(
+                        results["giron_utilise"], 
+                        self.app_preferences
+                    )
+                )
+        else:
+            if results.get("hauteur_reelle_contremarche") is not None:
+                self.hauteur_cm_souhaitee_var.set(
+                    f"{results['hauteur_reelle_contremarche'] * constants.POUCE_EN_CM:.2f}"
+                )
+            if results.get("giron_utilise") is not None:
+                self.giron_souhaite_var.set(
+                    f"{results['giron_utilise'] * constants.POUCE_EN_CM:.2f}"
+                )
+
+        # Mise à jour des nombres de marches/contremarches
+        if results.get("nombre_contremarches") is not None:
+            self.nombre_cm_manuel_var.set(str(results["nombre_contremarches"]))
+        if results.get("nombre_girons") is not None:
+            self.nombre_marches_manuel_var.set(str(results["nombre_girons"]))
 
     def update_results_display(self):
         res, prefs = self.latest_results, self.app_preferences
@@ -554,3 +760,9 @@ class ModernStairCalculator(tk.Tk):
 if __name__ == "__main__":
     app = ModernStairCalculator()
     app.mainloop()
+    # Si aucun résultat n'est affiché et que la conformité est "EN ATTENTE", cela signifie que les champs obligatoires ne sont pas tous remplis ou qu'une erreur de saisie empêche le calcul.
+    # Pour diagnostiquer le problème, vérifiez que tous les champs obligatoires (hauteur totale, giron souhaité, hauteur contremarche souhaitée, épaisseur plancher sup/inf) sont bien renseignés et valides.
+    # Règle de saisie minimale : il faut fournir soit la hauteur totale OU le nombre de contremarches ET la hauteur de contremarche,
+    # OU le nombre de marches avec la hauteur de contremarche (hauteur totale = hauteur de contremarche * (nombre de marches + 1)).
+    # Toutes les autres valeurs seront soit déduites automatiquement (valeurs par défaut) selon les informations fournies, soit modifiées par l'utilisateur en partie ou complètement.
+    # Si le problème persiste, activez le mode débogage (Ctrl+D) pour afficher plus d'informations dans la console et faciliter la correction des entrées.

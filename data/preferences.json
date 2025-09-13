@@ -1,0 +1,7 @@
+{
+    "unites_affichage": "pouces",
+    "default_tread_width_straight": "9 1/4",
+    "default_floor_finish_thickness_upper": "1 1/2",
+    "default_floor_finish_thickness_lower": "1",
+    "show_debug_info": false
+}
