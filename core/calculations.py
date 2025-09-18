@@ -1,12 +1,8 @@
 # Fichier: CalculateurEscalier/core/calculations.py
 
 import math
-from core import constants # Pour accéder aux constantes réglementaires et aux préférences chargées
-from utils.formatting import parser_fraction, decimal_to_fraction_str
-from core.validation import ( # Importation des fonctions de validation
-    validate_hauteur_format, validate_giron_format, validate_epaisseur_plancher_format,
-    validate_longueur_tremie_format, validate_position_tremie_format
-)
+from core import constants
+from core.formatting import parser_fraction, decimal_to_fraction_str
 
 def calculer_escalier_ajuste(
     hauteur_totale_escalier_str,
@@ -60,7 +56,7 @@ def calculer_escalier_ajuste(
     def parse_value(val):
         v = parser_fraction(val)
         if unite == "Centimètres":
-            return v / POUCE_EN_CM
+            return v / constants.POUCE_EN_CM
         return v
     try:
         hauteur_totale_escalier = parse_value(hauteur_totale_escalier_str)
@@ -80,6 +76,7 @@ def calculer_escalier_ajuste(
         
         results["kwargs"]["epaisseur_marche"] = epaisseur_marche
         results["kwargs"]["epaisseur_plancher_sup"] = epaisseur_plancher_sup
+        results["kwargs"]["epaisseur_plancher_inf"] = epaisseur_plancher_inf
 
     except ValueError as e:
         warnings.append(f"Erreur de format pour une entrée: {e}. Veuillez utiliser des nombres ou des fractions valides (ex: '10', '9 1/4', '3/4').")
@@ -324,21 +321,7 @@ def calculer_escalier_ajuste(
     results["min_echappee_calculee"] = min_echappee_calculee
     results["blondel_value"] = blondel_value
 
-    # À LA FIN : convertir les résultats en cm si besoin
-    if unite == "Centimètres":
-        def to_cm(val):
-            return val * POUCE_EN_CM if val is not None else None
-        for k in [
-            "hauteur_totale_escalier", "hauteur_reelle_contremarche", "giron_utilise", "longueur_calculee_escalier",
-            "longueur_limon_approximative", "min_echappee_calculee", "blondel_value", "ecart_hauteur"]:
-            if k in results and results[k] is not None:
-                results[k] = to_cm(results[k])
-
     return {"results": results, "warnings": warnings, "is_conform": is_conform}
-
-from core.constants import POUCE_EN_CM, TOLERANCE_MESURE_LASER
-from utils.formatting import parser_fraction
-
 
 def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, preferences, unite="Pouces"):
     """
@@ -349,7 +332,7 @@ def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, p
         def parse_value(val):
             v = parser_fraction(val)
             if unite == "Centimètres":
-                return v / POUCE_EN_CM
+                return v / constants.POUCE_EN_CM
             return v
         hls = parse_value(hls_str)
         hg = parse_value(hg_str)
@@ -361,10 +344,10 @@ def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, p
         bas = (bg + bd) / 2
 
         hauteur_totale_pouces = haut - bas + hls
-        hauteur_metres = hauteur_totale_pouces * POUCE_EN_CM / 100
+        hauteur_metres = hauteur_totale_pouces * constants.POUCE_EN_CM / 100
 
         if unite == "Centimètres":
-            hauteur_totale_cm = hauteur_totale_pouces * POUCE_EN_CM
+            hauteur_totale_cm = hauteur_totale_pouces * constants.POUCE_EN_CM
             return {
                 "hauteur_totale_calculee_cm": hauteur_totale_cm,
                 "hauteur_totale_calculee_metres": hauteur_totale_cm / 100,
@@ -372,9 +355,9 @@ def calculer_hauteur_totale_par_laser(hls_str, hg_str, hd_str, bg_str, bd_str, p
             }
 
         observations = []
-        if abs(hg - hd) > TOLERANCE_MESURE_LASER:
+        if abs(hg - hd) > constants.TOLERANCE_MESURE_LASER:
             observations.append("Différence significative entre HG et HD. Vérifiez le niveau supérieur.")
-        if abs(bg - bd) > TOLERANCE_MESURE_LASER:
+        if abs(bg - bd) > constants.TOLERANCE_MESURE_LASER:
             observations.append("Différence significative entre BG et BD. Vérifiez le niveau inférieur.")
 
         return {

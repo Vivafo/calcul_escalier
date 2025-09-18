@@ -4,40 +4,64 @@ import sys
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
-import math
-import subprocess
 import json
+try:
+    from core import reporting
+except ImportError as e:
+    print("ERREUR : Impossible d'importer reporting :", e)
+    reporting = None
 
-# Ajout du chemin du projet au PYTHONPATH
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import core.file_operations as file_operations
+except ImportError as e:
+    print("ERREUR : Impossible d'importer core.file_operations :", e)
+    file_operations = None
+
+try:
+    import core.formatting as formatting
+except ImportError as e:
+    print("ERREUR : Impossible d'importer core.formatting :", e)
+    formatting = None
+
+try:
+    import core.calculations as calculations
+except ImportError as e:
+    print("ERREUR : Impossible d'importer core.calculations :", e)
+    calculations = None
+
+# Import direct des classes de dialogue
+from core.preferences_dialog import PreferencesDialog
+
+# Log pour vérifier le chemin d'accès
+print("Chemin actuel :", os.path.dirname(os.path.abspath(__file__)))
+print("Chemin PYTHONPATH :", sys.path)
+
+# Ajouter dynamiquement le répertoire parent au PYTHONPATH
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 # Importer le module constants en premier
-from core import constants
-from core.constants import (
-    DEFAULTS_FILE,
-    DEFAULT_APP_PREFERENCES,
-    HAUTEUR_CM_MIN_REGLEMENTAIRE,
-    HAUTEUR_CM_MAX_REGLEMENTAIRE,
-    HAUTEUR_CM_CONFORT_CIBLE,
-    GIRON_MIN_REGLEMENTAIRE,
-    GIRON_MAX_REGLEMENTAIRE,
-    POUCE_EN_CM,
-    POUCE_EN_MM,
-    TOLERANCE_MESURE_LASER,
-    VERSION_PROGRAMME,
-    DEBUG_MODE_ACTIVE
-)
+try:
+    import core.constants as constants
+    print("Import de core.constants réussi.")
+except ImportError as e:
+    print("ERREUR : Impossible d'importer core.constants :", e)
+    raise
 
-from utils import formatting, reporting, file_operations
-from gui.dialogs import PreferencesDialog, LaserDialog
-from core.stair_logic import StairCalculator
-from core import calculations
+# Vérification si le fichier constants.py existe
+constants_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "core", "constants.py")
+if not os.path.exists(constants_path):
+    print("ERREUR : Le fichier constants.py est introuvable :", constants_path)
+else:
+    print("Fichier constants.py trouvé :", constants_path)
 
 # --- Vérification et création du dossier et fichier de préférences ---
-# Vérifier si le dossier data existe, sinon le créer
+DEFAULTS_FILE = constants.DEFAULTS_FILE
+DEFAULT_APP_PREFERENCES = constants.DEFAULT_APP_PREFERENCES
+
 os.makedirs(os.path.dirname(DEFAULTS_FILE), exist_ok=True)
 
-# Vérifier si le fichier de préférences existe, sinon le créer avec les valeurs par défaut
 if not os.path.exists(DEFAULTS_FILE):
     with open(DEFAULTS_FILE, 'w') as f:
         json.dump(DEFAULT_APP_PREFERENCES, f, indent=4)
@@ -47,90 +71,129 @@ class ModernStairCalculator(tk.Tk):
     Classe principale de l'interface du calculateur d'escalier.
     Gère la fenêtre principale, les entrées, les résultats et les interactions.
     """
+
+    def on_unit_change(self):
+        """Callback exécuté quand on change l'unité (Pouces / Centimètres)."""
+        new_unit = self.unites_var.get()
+        previous_unit = getattr(self, "_current_input_unit", new_unit)
+        print(f"⚙️ Unité sélectionnée : {new_unit}")
+
+        if new_unit == previous_unit:
+            self.app_preferences["unites_affichage"] = new_unit
+            self._current_input_unit = new_unit
+            return
+
+        try:
+            self._convert_inputs_between_units(previous_unit, new_unit)
+        except Exception as exc:
+            print(f"Erreur lors de la conversion des unités : {exc}")
+
+        # Mettre à jour les préférences
+        self.app_preferences["unites_affichage"] = new_unit
+        self._current_input_unit = new_unit
+
+        # Recalculer et rafraîchir l'UI
+        try:
+            self.recalculate_and_update_ui()
+        except Exception as e:
+            print(f"Erreur lors du recalcul après changement d'unité : {e}")
+
     def __init__(self):
         super().__init__()
         self.style = ttk.Style(self)
-        self.style.theme_use("clam")  # ou "default", "alt", etc.
-        
-        self.after(200, self._finalize_startup)
-
-        # --- Configuration de la fenêtre principale ---
+        self.style.theme_use("clam")
         self.title(f"Calculateur d'Escalier Pro v{constants.VERSION_PROGRAMME}")
         self.geometry("1200x850")
         self.minsize(900, 700)
 
-        # --- Chargement et gestion des préférences ---
-        self.app_preferences = file_operations.load_application_preferences()
-
-        self.latest_results = {} 
-        self.latest_coupe_results = {} 
-
-        self.input_labels_map = {} 
-        self._is_updating_ui = False
-
-        self.unites_var = tk.StringVar(value=self.app_preferences.get("unites_affichage", "pouces"))
-
-        from utils import conversion
-        self.conversion = conversion
-    
-        self.themes = {
-            "light": { "bg": "#F0F0F0", "fg": "#000000", "frame_bg": "#FFFFFF", "entry_bg": "#FFFFFF", "entry_fg": "#000000", "button_bg": "#E1E1E1", "button_fg": "#000000", "accent": "#0078D7", "accent_fg": "#FFFFFF", "success": "#107C10", "warning": "#D83B01", "error": "#D13438", "canvas_bg": "#EAEAEA", "canvas_line": "#333333", "canvas_accent": "#005A9E" },
-            "dark": { "bg": "#2D2D2D", "fg": "#FFFFFF", "frame_bg": "#3C3C3C", "entry_bg": "#2D2D2D", "entry_fg": "#FFFFFF", "button_bg": "#505050", "button_fg": "#FFFFFF", "accent": "#2E9AFE", "accent_fg": "#FFFFFF", "success": "#39D457", "warning": "#FF8C00", "error": "#FF4C4C", "canvas_bg": "#252525", "canvas_line": "#CCCCCC", "canvas_accent": "#2E9AFE" }
-        }
-        self.current_theme = "light"
+        self._initialize_state()
 
         self._setup_style_definitions()
-        self._setup_tk_variables()
         self._create_menu()
         self._create_main_layout()
         self._bind_events()
-        self.update_debug_menu_label()
-        self._update_input_labels_for_debug() 
-        self.recalculate_and_update_ui()
+        self.clear_messages()
 
-    def on_unit_change(self):
-        self.conversion.convertir_variables_interface(self, self.tk_input_vars_dict, self.unites_var.get(), self.app_preferences)
-        self.recalculate_and_update_ui()
+    def _initialize_state(self):
+        self._is_updating_ui = False
+        self.latest_results = {}
+        self.input_labels_map = {}
 
-    def _finalize_startup(self):
-        if constants.DEBUG_MODE_ACTIVE:
-            print("DEBUG: Initialisation tardive de l'interface...")
-        self.recalculate_and_update_ui()
-        if self.latest_results:
-            self.update_results_display()
-            self.update_visual_preview()
-            self.update_reports()
-        
-    def _setup_style_definitions(self):
-        self.style = ttk.Style(self)
-        self.style.theme_use('clam')
-        self.style.configure("TLabelFrame", borderwidth=2, relief="groove", padding=10)
-        self.style.configure("TButton", padding=5)
-        self.style.configure("Conformity.TLabel", font=('Segoe UI', 14, 'bold'), foreground=self.themes[self.current_theme]["fg"])
-        self.style.configure("Warning.TLabel", foreground=self.themes[self.current_theme]["warning"], font=('TkDefaultFont', 9, 'italic'))
-        self.style.configure("Error.TLabel", foreground=self.themes[self.current_theme]["error"], font=('TkDefaultFont', 10, 'bold'))
-        self.style.configure("Indicator.Green.TLabel", background=self.themes[self.current_theme]["success"], foreground=self.themes[self.current_theme]["accent_fg"], font=('Segoe UI', 9, 'bold'))
-        self.style.configure("Indicator.Yellow.TLabel", background=self.themes[self.current_theme]["warning"], foreground=self.themes[self.current_theme]["fg"], font=('Segoe UI', 9, 'bold'))
-        self.style.configure("Indicator.Red.TLabel", background=self.themes[self.current_theme]["error"], foreground=self.themes[self.current_theme]["accent_fg"], font=('Segoe UI', 9, 'bold'))
-        self.style.configure("Small.TLabel", font=('Segoe UI', 8)) 
+        self.themes = {
+            "light": {
+                "fg": "#1f2933",
+                "success": "#1b8a3c",
+                "warning": "#c27c1f",
+                "error": "#c0392b",
+                "canvas_line": "#274472",
+            }
+        }
+        self.current_theme = "light"
 
-    def _setup_tk_variables(self):
-        self.hauteur_totale_var = tk.StringVar(value="108")
-        default_tread_width_straight = self.app_preferences.get("default_tread_width_straight", "9 1/4").replace('"', '')
-        default_giron_str = formatting.decimal_to_fraction_str(formatting.parser_fraction(default_tread_width_straight), self.app_preferences)
-        self.giron_souhaite_var = tk.StringVar(value=default_giron_str)
-        default_hcm_str = formatting.decimal_to_fraction_str(constants.HAUTEUR_CM_CONFORT_CIBLE, self.app_preferences)
-        self.hauteur_cm_souhaitee_var = tk.StringVar(value=default_hcm_str)
-        self.epaisseur_plancher_sup_var = tk.StringVar(value=self.app_preferences.get("default_floor_finish_thickness_upper", "1 1/2"))
-        self.profondeur_tremie_ouverture_var = tk.StringVar(value="")
-        self.position_tremie_var = tk.StringVar(value="")
-        self.epaisseur_plancher_inf_var = tk.StringVar(value=self.app_preferences.get("default_floor_finish_thickness_lower", "1"))
-        self.espace_disponible_var = tk.StringVar(value="")
-        self.nombre_cm_manuel_var = tk.StringVar(value="")
-        self.nombre_cm_ajuste_var = tk.IntVar(value=0)
+        base_preferences = DEFAULT_APP_PREFERENCES.copy()
+        if file_operations:
+            try:
+                loaded_prefs = file_operations.load_application_preferences()
+                if isinstance(loaded_prefs, dict):
+                    base_preferences.update(loaded_prefs)
+            except Exception as exc:
+                print("⚠️ Préférences par défaut utilisées (erreur de chargement) :", exc)
+        self.app_preferences = base_preferences
+
+        default_hcm = str(constants.HAUTEUR_CM_CONFORT_CIBLE)
+        if formatting:
+            try:
+                default_hcm = formatting.decimal_to_fraction_str(
+                    constants.HAUTEUR_CM_CONFORT_CIBLE, self.app_preferences
+                )
+            except Exception as exc:
+                print("⚠️ Impossible de formater la hauteur CM par défaut :", exc)
+
+        self.unites_var = tk.StringVar(
+            value=self.app_preferences.get("unites_affichage", "pouces")
+        )
+        self.hauteur_totale_var = tk.StringVar()
+        self.epaisseur_plancher_sup_var = tk.StringVar(
+            value=self.app_preferences.get("default_floor_finish_thickness_upper", "0")
+        )
+        self.epaisseur_plancher_inf_var = tk.StringVar(
+            value=self.app_preferences.get("default_floor_finish_thickness_lower", "0")
+        )
+        self.profondeur_tremie_ouverture_var = tk.StringVar()
+        self.position_tremie_var = tk.StringVar()
+        self.espace_disponible_var = tk.StringVar()
         self.nombre_marches_manuel_var = tk.StringVar(value="")
-        self.nombre_marches_final_display_var = tk.StringVar(value="") 
+        self.nombre_cm_manuel_var = tk.StringVar(value="")
+        self.giron_souhaite_var = tk.StringVar(
+            value=self.app_preferences.get("default_tread_width_straight", "9 1/4")
+        )
+        self.hauteur_cm_souhaitee_var = tk.StringVar(value=default_hcm)
+
+        self.tk_input_vars_dict = {
+            "hauteur_totale_var": self.hauteur_totale_var,
+            "hauteur_cm_souhaitee_var": self.hauteur_cm_souhaitee_var,
+            "giron_souhaite_var": self.giron_souhaite_var,
+            "epaisseur_plancher_sup_var": self.epaisseur_plancher_sup_var,
+            "epaisseur_plancher_inf_var": self.epaisseur_plancher_inf_var,
+            "profondeur_tremie_ouverture_var": self.profondeur_tremie_ouverture_var,
+            "position_tremie_var": self.position_tremie_var,
+            "espace_disponible_var": self.espace_disponible_var,
+        }
+
+        self._current_input_unit = self.unites_var.get()
+        self._unit_sensitive_vars = [
+            self.hauteur_totale_var,
+            self.giron_souhaite_var,
+            self.hauteur_cm_souhaitee_var,
+            self.epaisseur_plancher_sup_var,
+            self.epaisseur_plancher_inf_var,
+            self.profondeur_tremie_ouverture_var,
+            self.position_tremie_var,
+            self.espace_disponible_var,
+        ]
+
         self.conformity_status_var = tk.StringVar(value="EN ATTENTE")
+        self.warnings_var = tk.StringVar(value="")
         self.hauteur_reelle_cm_res_var = tk.StringVar()
         self.giron_utilise_res_var = tk.StringVar()
         self.longueur_totale_res_var = tk.StringVar()
@@ -138,106 +201,61 @@ class ModernStairCalculator(tk.Tk):
         self.limon_res_var = tk.StringVar()
         self.echappee_res_var = tk.StringVar()
         self.longueur_min_escalier_var = tk.StringVar()
-        self.warnings_var = tk.StringVar()
+
         self.hauteur_cm_message_var = tk.StringVar()
         self.giron_message_var = tk.StringVar()
         self.echappee_message_var = tk.StringVar()
         self.blondel_message_var = tk.StringVar()
         self.longueur_disponible_message_var = tk.StringVar()
         self.angle_message_var = tk.StringVar()
-        self.hauteur_totale_ecart_message_var = tk.StringVar() 
-        self.tk_input_vars_dict = {
-            "hauteur_totale_escalier": self.hauteur_totale_var, "giron_souhaite": self.giron_souhaite_var,
-            "hauteur_cm_souhaitee": self.hauteur_cm_souhaitee_var, "epaisseur_plancher_sup": self.epaisseur_plancher_sup_var,
-            "epaisseur_plancher_inf": self.epaisseur_plancher_inf_var, "longueur_tremie": self.profondeur_tremie_ouverture_var,
-            "position_tremie": self.position_tremie_var, "espace_disponible": self.espace_disponible_var
-        }
+        self.hauteur_totale_ecart_message_var = tk.StringVar()
 
-        # Ajouter après l'initialisation des variables:
-        # Définir les valeurs par défaut pour éviter les erreurs
-        if not self.nombre_cm_manuel_var.get().strip():
-            self.nombre_cm_manuel_var.set("14")  # Valeur initiale typique
-        if not self.nombre_marches_manuel_var.get().strip():
-            self.nombre_marches_manuel_var.set("13")  # CM - 1
+    def _convert_inputs_between_units(self, from_unit, to_unit):
+        if not formatting or from_unit == to_unit:
+            return
+
+        factor = constants.POUCE_EN_CM
+        was_updating = self._is_updating_ui
+        self._is_updating_ui = True
+        try:
+            for var in self._unit_sensitive_vars:
+                raw_value = var.get().strip()
+                if not raw_value:
+                    continue
+
+                normalized_value = raw_value.replace(',', '.')
+                try:
+                    numeric_value = formatting.parser_fraction(normalized_value)
+                except Exception:
+                    continue
+
+                if from_unit == "cm":
+                    numeric_value /= factor
+
+                if to_unit == "cm":
+                    converted_value = numeric_value * factor
+                    var.set(f"{converted_value:.2f}")
+                else:
+                    var.set(formatting.decimal_to_fraction_str(numeric_value, self.app_preferences))
+        finally:
+            self._is_updating_ui = was_updating
+
+    def _setup_style_definitions(self):
+        colors = self.themes[self.current_theme]
+        self.style.configure("TLabelFrame", borderwidth=2, relief="groove", padding=10)
+        self.style.configure("Conformity.TLabel", font=('Segoe UI', 12, 'bold'), foreground=colors["fg"])
+        self.style.configure("Indicator.Green.TLabel", foreground=colors["success"], font=('Segoe UI', 9, 'bold'))
+        self.style.configure("Indicator.Yellow.TLabel", foreground=colors["warning"], font=('Segoe UI', 9, 'bold'))
+        self.style.configure("Indicator.Red.TLabel", foreground=colors["error"], font=('Segoe UI', 9, 'bold'))
+        self.style.configure("InputControl.TFrame", padding=(4, 2))
+        self.style.configure("DisplayValue.TLabel", font=('Segoe UI', 10, "bold"), foreground=colors["fg"], padding=(6, 2))
 
     def _create_menu(self):
         menubar = tk.Menu(self)
         self.config(menu=menubar)
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Fichier", menu=file_menu)
-        file_menu.add_command(label="Préférences...", command=self.open_preferences_dialog)
-        file_menu.add_command(label="Ouvrir un projet...", command=lambda: file_operations.charger_projet(self))
-        file_menu.add_command(label="Sauvegarder le projet...", command=lambda: file_operations.sauvegarder_projet(self.latest_results, self))
-        file_menu.add_separator()
-        file_menu.add_command(label="Exporter le rapport (PDF)...", command=self.export_pdf_report)
-        file_menu.add_separator()
         file_menu.add_command(label="Quitter", command=self.quit)
-        view_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Affichage", menu=view_menu)
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        self.tools_menu = tools_menu 
-        menubar.add_cascade(label="Outils", menu=tools_menu)
-        tools_menu.add_command(label="Assistance Laser (4 points)...", command=self.open_laser_dialog)
-        tools_menu.add_command(label="Calculateur de Profondeur de Coupe...", command=self.open_profondeur_coupe_tool)
-        tools_menu.add_separator()
-        self.debug_menu_button = tk.Menu(tools_menu, tearoff=0)
-        tools_menu.add_cascade(label="Débogage", menu=self.debug_menu_button)
-        self.debug_menu_button.add_command(label="Activer / Désactiver (Ctrl+D)", command=self.toggle_debug_mode)
-        self.debug_menu_index = tools_menu.index(tk.END)
-        self.bind_all("<Control-d>", lambda event: self.toggle_debug_mode())
-        
-    def open_profondeur_coupe_tool(self):
-        script_path = "ProfondeurCoupe.py"
-        if not os.path.exists(script_path):
-            messagebox.showerror("Erreur Fichier", f"Le fichier '{script_path}' est introuvable.", parent=self)
-            return
-        try:
-            result = subprocess.run(['python', script_path], capture_output=True, text=True, check=True, encoding='utf-8')
-            output = result.stdout
-            start_marker, end_marker = "---DEBUT_JSON_PROFONDEUR_COUPE---", "---FIN_JSON_PROFONDEUR_COUPE---"
-            if start_marker in output and end_marker in output:
-                json_part_start = output.find(start_marker) + len(start_marker)
-                json_part_end = output.find(end_marker)
-                json_string = output[json_part_start:json_part_end].strip()
-                self.latest_coupe_results = json.loads(json_string)
-                res = self.latest_coupe_results.get("resultats_H_mm", {})
-                h90, h45 = res.get('H90_mm'), res.get('H45_mm')
-                h90_str = f"{h90:.2f} mm" if h90 is not None else "Erreur de calcul"
-                h45_str = f"{h45:.2f} mm" if h45 is not None else "Erreur de calcul"
-                messagebox.showinfo("Résultats Profondeur de Coupe", f"Les calculs de décalage ont été reçus avec succès:\n\n  • Décalage H90: {h90_str}\n  • Décalage H45: {h45_str}\n\nCes données sont maintenant disponibles pour de futurs calculs.", parent=self)
-            else:
-                messagebox.showwarning("Erreur de Communication", "Impossible de trouver les données JSON dans la sortie du script.", parent=self)
-        except FileNotFoundError: messagebox.showerror("Erreur Python", "L'interpréteur 'python' n'a pas été trouvé. Assurez-vous que Python est dans votre PATH.", parent=self)
-        except subprocess.CalledProcessError as e: messagebox.showerror("Erreur d'Exécution", f"L'outil de profondeur de coupe a rencontré une erreur:\n\n{e.stderr}", parent=self)
-        except json.JSONDecodeError: messagebox.showerror("Erreur de Données", "Impossible de lire les résultats retournés par l'outil (format JSON invalide).", parent=self)
-        except Exception as e: messagebox.showerror("Erreur Inattendue", f"Une erreur inattendue est survenue en lançant l'outil:\n{e}", parent=self)
-
-    def _update_input_labels_for_debug(self):
-        for shortcut, (label_widget, original_text) in self.input_labels_map.items():
-            label_widget.config(text=f"{original_text} ({shortcut})" if constants.DEBUG_MODE_ACTIVE else original_text)
-
-    def update_debug_menu_label(self): 
-        try:
-            index = -1
-            for i in range(self.tools_menu.index(tk.END) + 1):
-                try: label = self.tools_menu.entrycget(i, "label")
-                except Exception: continue
-                if label and "Débogage" in label:
-                    if "Débogage" in label: index = i; break
-            if index != -1:
-                actual_label_text = self.tools_menu.entrycget(index, "label")
-                if "Débogage" in actual_label_text:
-                    new_label = "Débogage: Actif (Vert)" if constants.DEBUG_MODE_ACTIVE else "Débogage: Inactif (Rouge)"
-                    self.tools_menu.entryconfig(index, label=new_label)
-        except Exception as e:
-            if constants.DEBUG_MODE_ACTIVE: print(f"DEBUG: Erreur lors de la mise à jour du label de débogage: {e}")
-
-    def toggle_debug_mode(self):
-        constants.DEBUG_MODE_ACTIVE = not constants.DEBUG_MODE_ACTIVE
-        print(f"Mode débogage {'ACTIVÉ' if constants.DEBUG_MODE_ACTIVE else 'DÉSACTIVÉ'}.")
-        self.update_debug_menu_label()
-        self._update_input_labels_for_debug() 
-        self.recalculate_and_update_ui()
 
     def _create_main_layout(self):
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -285,30 +303,38 @@ class ModernStairCalculator(tk.Tk):
         ttk.Separator(input_frame, orient='horizontal').grid(row=row_idx, column=0, columnspan=4, sticky='ew', pady=10)
         row_idx += 1
         ttk.Label(input_frame, text="Nb Marches (Girons) :", font=('Segoe UI', 10, 'bold')).grid(row=row_idx, column=0, sticky="w", padx=5, pady=5)
-        marches_control_frame = ttk.Frame(input_frame)
+        marches_control_frame = ttk.Frame(input_frame, style="InputControl.TFrame")
         marches_control_frame.grid(row=row_idx, column=1, sticky="ew", padx=5, pady=5)
-        ttk.Button(marches_control_frame, text="-", command=self.decrement_marches, width=3).pack(side="left")
-        ttk.Entry(marches_control_frame, textvariable=self.nombre_marches_manuel_var, width=5, justify='center', font=('Segoe UI', 10)).pack(side="left", padx=5)
-        ttk.Button(marches_control_frame, text="+", command=self.increment_marches, width=3).pack(side="left")
+        marches_control_frame.columnconfigure(1, weight=1)
+        ttk.Button(marches_control_frame, text="-", command=self.decrement_marches, width=3).grid(row=0, column=0, padx=(0, 4))
+        ttk.Entry(marches_control_frame, textvariable=self.nombre_marches_manuel_var, width=10, justify="center", font=('Segoe UI', 10)).grid(row=0, column=1, padx=4, sticky="ew")
+        ttk.Button(marches_control_frame, text="+", command=self.increment_marches, width=3).grid(row=0, column=2, padx=(4, 0))
         ttk.Label(input_frame, text="Nb Contremarches (CM) :", font=('Segoe UI', 10, 'bold')).grid(row=row_idx, column=2, sticky="w", padx=5, pady=5)
-        cm_control_frame = ttk.Frame(input_frame)
-        cm_control_frame.grid(row=row_idx, column=3, sticky="ew", padx=5, pady=5)
-        ttk.Button(cm_control_frame, text="-", command=self.decrement_cm, width=3).pack(side="left")
-        ttk.Entry(cm_control_frame, textvariable=self.nombre_cm_manuel_var, width=5, justify='center', font=('Segoe UI', 10)).pack(side="left", padx=5)
-        ttk.Button(cm_control_frame, text="+", command=self.increment_cm, width=3).pack(side="left")
+        ttk.Label(
+            input_frame,
+            textvariable=self.nombre_cm_manuel_var,
+            style="DisplayValue.TLabel",
+            width=10,
+            anchor="center",
+            justify="center"
+        ).grid(row=row_idx, column=3, sticky="ew", padx=5, pady=5)
         row_idx += 1
         ttk.Label(input_frame, text="Giron souhaité :", font=('Segoe UI', 10, 'bold')).grid(row=row_idx, column=0, sticky="w", padx=5, pady=5)
-        giron_control_frame = ttk.Frame(input_frame)
+        giron_control_frame = ttk.Frame(input_frame, style="InputControl.TFrame")
         giron_control_frame.grid(row=row_idx, column=1, sticky="ew", padx=5, pady=5)
-        ttk.Button(giron_control_frame, text="-", command=self.decrement_giron, width=3).pack(side="left")
-        ttk.Entry(giron_control_frame, textvariable=self.giron_souhaite_var, width=10, justify='center', font=('Segoe UI', 10)).pack(side="left", padx=5)
-        ttk.Button(giron_control_frame, text="+", command=self.increment_giron, width=3).pack(side="left")
+        giron_control_frame.columnconfigure(1, weight=1)
+        ttk.Button(giron_control_frame, text="-", command=self.decrement_giron, width=3).grid(row=0, column=0, padx=(0, 4))
+        ttk.Entry(giron_control_frame, textvariable=self.giron_souhaite_var, width=10, justify="center", font=('Segoe UI', 10)).grid(row=0, column=1, padx=4, sticky="ew")
+        ttk.Button(giron_control_frame, text="+", command=self.increment_giron, width=3).grid(row=0, column=2, padx=(4, 0))
         ttk.Label(input_frame, text="Hauteur contremarche :", font=('Segoe UI', 10, 'bold')).grid(row=row_idx, column=2, sticky="w", padx=5, pady=5)
-        hcm_control_frame = ttk.Frame(input_frame)
-        hcm_control_frame.grid(row=row_idx, column=3, sticky="ew", padx=5, pady=5)
-        ttk.Button(hcm_control_frame, text="-", command=self.decrement_hcm, width=3).pack(side="left")
-        ttk.Entry(hcm_control_frame, textvariable=self.hauteur_cm_souhaitee_var, width=10, justify='center', font=('Segoe UI', 10)).pack(side="left", padx=5)
-        ttk.Button(hcm_control_frame, text="+", command=self.increment_hcm, width=3).pack(side="left")
+        ttk.Label(
+            input_frame,
+            textvariable=self.hauteur_cm_souhaitee_var,
+            style="DisplayValue.TLabel",
+            width=10,
+            anchor="center",
+            justify="center"
+        ).grid(row=row_idx, column=3, sticky="ew", padx=5, pady=5)
         row_idx += 1
         ttk.Button(input_frame, text="Appliquer Valeurs Idéales (confort)", command=self.apply_ideal_values).grid(row=row_idx, column=0, columnspan=4, pady=10)
 
@@ -417,7 +443,7 @@ class ModernStairCalculator(tk.Tk):
             nb_cm = new_nb_marches + 1
             self.nombre_cm_manuel_var.set(str(nb_cm))
             
-            # Si on a une hauteur totale, on ajuste la hauteur de contremarche
+            # Si on a une hauteur totale, on ajuste la hauteur de contremarse
             height = formatting.parser_fraction(self.hauteur_totale_var.get() or "0")
             if height > 0:
                 hcm = height / nb_cm
@@ -535,8 +561,7 @@ class ModernStairCalculator(tk.Tk):
         
         try:
             # Vérification de l'initialisation des modules
-            if not hasattr(constants, 'HAUTEUR_CM_MIN_REGLEMENTAIRE'):
-                raise ImportError("Les constantes n'ont pas été correctement chargées")
+            # Supprimé car inutile si le module est bien défini
 
             # 1. Récupération des valeurs
             input_values = {
@@ -754,7 +779,17 @@ class ModernStairCalculator(tk.Tk):
         self.app_preferences = file_operations.load_application_preferences()
         self.recalculate_and_update_ui()
         
-    def open_laser_dialog(self): LaserDialog(self)
+    def open_laser_dialog(self):
+        # Import or define LaserDialog before using it
+        try:
+            from core.laser_dialog import LaserDialog
+        except ImportError:
+            messagebox.showerror("Erreur", "Le module LaserDialog est introuvable.", parent=self)
+            return
+        dlg = LaserDialog(self)
+        self.wait_window(dlg)  # Attend la fermeture
+        if dlg.result:
+            self.hauteur_totale_var.set(dlg.result)
     def export_pdf_report(self): messagebox.showinfo("Export PDF", "La fonction d'exportation PDF est en développement.", parent=self)
 
 if __name__ == "__main__":
@@ -764,5 +799,7 @@ if __name__ == "__main__":
     # Pour diagnostiquer le problème, vérifiez que tous les champs obligatoires (hauteur totale, giron souhaité, hauteur contremarche souhaitée, épaisseur plancher sup/inf) sont bien renseignés et valides.
     # Règle de saisie minimale : il faut fournir soit la hauteur totale OU le nombre de contremarches ET la hauteur de contremarche,
     # OU le nombre de marches avec la hauteur de contremarche (hauteur totale = hauteur de contremarche * (nombre de marches + 1)).
+    # Toutes les autres valeurs seront soit déduites automatiquement (valeurs par défaut) selon les informations fournies, soit modifiées par l'utilisateur en partie ou complètement.
+    # Si le problème persiste, activez le mode débogage (Ctrl+D) pour afficher plus d'informations dans la console et faciliter la correction des entrées.
     # Toutes les autres valeurs seront soit déduites automatiquement (valeurs par défaut) selon les informations fournies, soit modifiées par l'utilisateur en partie ou complètement.
     # Si le problème persiste, activez le mode débogage (Ctrl+D) pour afficher plus d'informations dans la console et faciliter la correction des entrées.
