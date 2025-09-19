@@ -119,7 +119,6 @@ def generer_tableau_marches(resultats_calcul, app_preferences):
     hauteur_cm = resultats_calcul.get("hauteur_reelle_contremarche", 0)
     giron = resultats_calcul.get("giron_utilise", 0)
     nombre_contremarches = resultats_calcul.get("nombre_contremarches", 0)
-    nombre_girons = resultats_calcul.get("nombre_girons", 0)
 
     if hauteur_cm <= 0 or giron <= 0 or nombre_contremarches <= 0:
         return "Données insuffisantes pour générer le tableau d'hypoténuse cumulée."
@@ -133,29 +132,29 @@ def generer_tableau_marches(resultats_calcul, app_preferences):
     def df_mm(val):
         return round(val * constants.POUCE_EN_MM) if val is not None else "N/A"
 
+    nombre_cm = max(int(nombre_contremarches), 0)
+
     tableau_lines = [
         "=== TABLEAU 1: HYPOTÉNUSE CUMULÉE ===",
         "",
-        "Chaque valeur correspond à la somme cumulative de l'hypoténuse calculée pour chaque marche.",
-        "La première ligne (Marche pied) correspond à la moitié de l'hypoténuse unitaire.",
+        "Chaque valeur correspond à la somme cumulative de l'hypoténuse calculée pour chaque contremarche.",
+        "La première ligne (Contremarche pied) correspond à la moitié de l'hypoténuse unitaire.",
         "",
-        "| **Élément** | **Hypoténuse cumulée (pouces)** | **Hypoténuse cumulée (mm)** |",
-        "|-------------|----------------------------------|------------------------------|"
+        "| **Contremarche** | **Hypoténuse cumulée (pouces)** | **Hypoténuse cumulée (mm)** |",
+        "|-----------------|----------------------------------|------------------------------|"
     ]
 
     marche_pied_cum = hypotenuse_unitaire / 2
-    tableau_lines.append(f"| Marche pied | {df(marche_pied_cum)} | {df_mm(marche_pied_cum)} |")
+    tableau_lines.append(f"| Contremarche 1 (pied) | {df(marche_pied_cum)} | {df_mm(marche_pied_cum)} |")
 
-    for i in range(2, nombre_girons + 1):
-        element_nom = f"Marche {i}"
-        hypotenuse_cumulee = marche_pied_cum + (i-1) * hypotenuse_unitaire
-        tableau_lines.append(f"| {element_nom} | {df(hypotenuse_cumulee)} | {df_mm(hypotenuse_cumulee)} |")
-
-    hypotenuse_cumulee_tete = marche_pied_cum + nombre_girons * hypotenuse_unitaire
-    tableau_lines.append(f"| Marche tête | {df(hypotenuse_cumulee_tete)} | {df_mm(hypotenuse_cumulee_tete)} |")
+    for cm_index in range(2, nombre_cm + 1):
+        hypotenuse_cumulee = marche_pied_cum + (cm_index - 1) * hypotenuse_unitaire
+        label = f"Contremarche {cm_index}"
+        if cm_index == nombre_cm:
+            label += " (tête)"
+        tableau_lines.append(f"| {label} | {df(hypotenuse_cumulee)} | {df_mm(hypotenuse_cumulee)} |")
 
     return "\n".join(tableau_lines)
-
 def generer_tableau_parametres(resultats_calcul, app_preferences):
     hauteur_totale = resultats_calcul.get("hauteur_totale_escalier", 0)
     giron = resultats_calcul.get("giron_utilise", 0)
