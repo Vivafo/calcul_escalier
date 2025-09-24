@@ -1,0 +1,14 @@
+﻿{
+  "window.title": "${folderName} • Calcul_escalierPy",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#184a90",
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#184a9088",
+    "titleBar.inactiveForeground": "#e0e0e0",
+    "activityBar.background": "#0f3057",
+    "activityBar.foreground": "#ffffff",
+    "activityBar.inactiveForeground": "#ffffff99",
+    "statusBar.background": "#092746",
+    "statusBar.foreground": "#ffffff"
+  }
+}

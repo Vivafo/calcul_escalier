@@ -1,4 +1,4 @@
-# Fichier: CalculateurEscalier/utils/file_operations.py
+﻿# Fichier: Calcul_escalierPy/utils/file_operations.py
 
 import json
 import os

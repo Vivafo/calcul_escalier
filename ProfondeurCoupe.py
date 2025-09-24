@@ -1,4 +1,4 @@
-# Fichier: ProfondeurCoupe.py
+﻿# Fichier: ProfondeurCoupe.py
 # Programme indépendant avec GUI Tkinter pour calculer le décalage de lame H90 et H45.
 
 import tkinter as tk
@@ -77,9 +77,9 @@ def calculer_H45_mm(rayon_lame_mm, epaisseur_bois_mm, profondeur_depassement_P_m
 
 # --- Utilitaire de parsing (identique à celui de votre projet) ---
 # Pour que ce programme soit vraiment indépendant et puisse utiliser parser_fraction,
-# il faudrait soit que ce fichier soit dans la structure de CalculateurEscalier
+# il faudrait soit que ce fichier soit dans la structure de Calcul_escalierPy
 # pour que l'import fonctionne, soit copier/adapter parser_fraction ici.
-# Option 1: Si ProfondeurCoupe.py est dans le dossier racine de CalculateurEscalier:
+# Option 1: Si ProfondeurCoupe.py est dans le dossier racine de Calcul_escalierPy:
 try:
     from utils.formatting import parser_fraction, ALLOWED_DENOMINATORS # Tente d'importer depuis le projet parent
     from core.validation import validate_generic_fraction_format
@@ -424,9 +424,9 @@ class ProfondeurCoupeApp:
 if __name__ == "__main__":
     # Si ProfondeurCoupe.py est exécuté directement
     # Pour les imports relatifs (utils.formatting), ce script doit être
-    # exécutable depuis le répertoire racine du projet CalculateurEscalier,
+    # exécutable depuis le répertoire racine du projet Calcul_escalierPy,
     # ou le PYTHONPATH doit être configuré.
-    # Exemple: python ProfondeurCoupe.py (si dans le même dossier que main_app.py)
+    # Exemple: python ProfondeurCoupe.py (si dans le même dossier que Calcul_escalierPy.py)
     # ou python tools/ProfondeurCoupe.py (si vous le mettez dans un dossier tools)
     
     # Ajout temporaire du chemin parent pour permettre les imports relatifs s'il est dans un sous-dossier
@@ -436,9 +436,11 @@ if __name__ == "__main__":
     # if parent_dir not in sys.path:
     #    sys.path.insert(0, parent_dir)
     # # Maintenant, les imports comme `from utils.formatting import parser_fraction` devraient mieux fonctionner
-    # # s'il est dans un sous-dossier de CalculateurEscalier et que CalculateurEscalier est le dossier parent.
+    # # s'il est dans un sous-dossier de Calcul_escalierPy et que Calcul_escalierPy est le dossier parent.
 
     print("Démarrage du programme…")
     root = tk.Tk()
     app = ProfondeurCoupeApp(root)
     root.mainloop()
+
+

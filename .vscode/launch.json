@@ -4,8 +4,8 @@
         {
             "type": "python",
             "request": "launch",
-            "name": "Lancer Calculateur Escalier",
-            "program": "${workspaceFolder}/main_app.py",
+            "name": "Lancer Calcul_escalierPy",
+            "program": "${workspaceFolder}/Calcul_escalierPy.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         }

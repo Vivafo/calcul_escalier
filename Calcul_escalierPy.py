@@ -1,56 +1,54 @@
-# Fichier: main_app.py
+﻿# Fichier: Calcul_escalierPy.py
 
 import sys
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+try:
+    from core import constants
+except ImportError as exc:
+    raise ImportError("Impossible d'importer core.constants") from exc
+
 try:
     from core import reporting
-except ImportError as e:
-    print("ERREUR : Impossible d'importer reporting :", e)
+except ImportError as exc:
+    print("ERREUR : Impossible d'importer reporting :", exc)
     reporting = None
 
 try:
-    import core.file_operations as file_operations
-except ImportError as e:
-    print("ERREUR : Impossible d'importer core.file_operations :", e)
+    from core import file_operations
+except ImportError as exc:
+    print("ERREUR : Impossible d'importer core.file_operations :", exc)
     file_operations = None
 
 try:
-    import core.formatting as formatting
-except ImportError as e:
-    print("ERREUR : Impossible d'importer core.formatting :", e)
+    from core import formatting
+except ImportError as exc:
+    print("ERREUR : Impossible d'importer core.formatting :", exc)
     formatting = None
 
 try:
-    import core.calculations as calculations
-except ImportError as e:
-    print("ERREUR : Impossible d'importer core.calculations :", e)
+    from core import calculations
+except ImportError as exc:
+    print("ERREUR : Impossible d'importer core.calculations :", exc)
     calculations = None
 
-# Import direct des classes de dialogue
-from core.preferences_dialog import PreferencesDialog
+try:
+    from core.preferences_dialog import PreferencesDialog
+except ImportError as exc:
+    raise ImportError("Impossible d'importer PreferencesDialog") from exc
 
-# Log pour vérifier le chemin d'accès
-print("Chemin actuel :", os.path.dirname(os.path.abspath(__file__)))
+print("Chemin actuel :", BASE_DIR)
 print("Chemin PYTHONPATH :", sys.path)
 
-# Ajouter dynamiquement le répertoire parent au PYTHONPATH
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-
-# Importer le module constants en premier
-try:
-    import core.constants as constants
-    print("Import de core.constants réussi.")
-except ImportError as e:
-    print("ERREUR : Impossible d'importer core.constants :", e)
-    raise
-
-# Vérification si le fichier constants.py existe
-constants_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "core", "constants.py")
+constants_path = os.path.join(BASE_DIR, "core", "constants.py")
 if not os.path.exists(constants_path):
     print("ERREUR : Le fichier constants.py est introuvable :", constants_path)
 else:
@@ -60,7 +58,9 @@ else:
 DEFAULTS_FILE = constants.DEFAULTS_FILE
 DEFAULT_APP_PREFERENCES = constants.DEFAULT_APP_PREFERENCES
 
-os.makedirs(os.path.dirname(DEFAULTS_FILE), exist_ok=True)
+defaults_dir = os.path.dirname(DEFAULTS_FILE)
+if defaults_dir:
+    os.makedirs(defaults_dir, exist_ok=True)
 
 if not os.path.exists(DEFAULTS_FILE):
     with open(DEFAULTS_FILE, 'w') as f:
@@ -131,7 +131,7 @@ class ModernStairCalculator(tk.Tk):
         self.current_theme = "light"
 
         base_preferences = DEFAULT_APP_PREFERENCES.copy()
-        if file_operations:
+        if file_operations and hasattr(file_operations, 'load_application_preferences'):
             try:
                 loaded_prefs = file_operations.load_application_preferences()
                 if isinstance(loaded_prefs, dict):
@@ -776,9 +776,10 @@ class ModernStairCalculator(tk.Tk):
 
     def open_preferences_dialog(self):
         PreferencesDialog(self, self.app_preferences)
-        self.app_preferences = file_operations.load_application_preferences()
+        if file_operations and hasattr(file_operations, 'load_application_preferences'):
+            self.app_preferences = file_operations.load_application_preferences()
         self.recalculate_and_update_ui()
-        
+
     def open_laser_dialog(self):
         # Import or define LaserDialog before using it
         try:
@@ -803,3 +804,8 @@ if __name__ == "__main__":
     # Si le problème persiste, activez le mode débogage (Ctrl+D) pour afficher plus d'informations dans la console et faciliter la correction des entrées.
     # Toutes les autres valeurs seront soit déduites automatiquement (valeurs par défaut) selon les informations fournies, soit modifiées par l'utilisateur en partie ou complètement.
     # Si le problème persiste, activez le mode débogage (Ctrl+D) pour afficher plus d'informations dans la console et faciliter la correction des entrées.
+
+
+
+
+

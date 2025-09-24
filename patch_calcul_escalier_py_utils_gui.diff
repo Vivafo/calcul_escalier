@@ -1,4 +1,4 @@
---- a/main_app.py+++ b/main_app.py@@ -12,7 +12,7 @@     reporting = None
+﻿--- a/Calcul_escalierPy.py+++ b/Calcul_escalierPy.py@@ -12,7 +12,7 @@     reporting = None
  
  try:
 -    import core.file_operations as file_operations
@@ -31,3 +31,4 @@
          self.recalculate_and_update_ui()
          
      def open_laser_dialog(self):
+

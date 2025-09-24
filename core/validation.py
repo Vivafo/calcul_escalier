@@ -1,4 +1,4 @@
-# Fichier: CalculateurEscalier/core/validation.py
+﻿# Fichier: Calcul_escalierPy/core/validation.py
 # Contenu actuel (vérifié et validé)
 
 from tkinter import messagebox # Dépendance à Tkinter pour les messages

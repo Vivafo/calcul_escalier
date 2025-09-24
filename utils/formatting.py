@@ -1,4 +1,4 @@
-# Fichier: CalculateurEscalier/utils/formatting.py
+﻿# Fichier: Calcul_escalierPy/utils/formatting.py
 
 import math
 # Assurez-vous que constants est importé ou que les valeurs sont définies localement si formatting.py est autonome

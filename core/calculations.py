@@ -1,4 +1,4 @@
-# Fichier: CalculateurEscalier/core/calculations.py
+﻿# Fichier: Calcul_escalierPy/core/calculations.py
 
 import math
 from core import constants
